@@ -9,6 +9,7 @@ const BULK_CONFIRM_THRESHOLD = 5;
 const TEMPLATE_SUMMARY: Record<NudgeTemplate, string> = {
   unused_budget: 'a reminder of how much Kudos budget they have left this year',
   unclaimed_gift: 'a reminder to claim the gift cards waiting for them',
+  manager_gap: "a reminder that a direct report hasn't been recognised recently",
 };
 
 function nameOf(id: PersonId, people: Person[]): string {

@@ -4,6 +4,8 @@ import { ToastProvider } from './components/ui/Toast'
 import { DashboardPage } from './screens/dashboard/DashboardPage'
 import { TeamDetailPage } from './screens/team/TeamDetailPage'
 import { NetworkMapPage } from './screens/network/NetworkMapPage'
+import { RelationshipsPage } from './screens/relationships/RelationshipsPage'
+import { PersonDetailPage } from './screens/relationships/PersonDetailPage'
 import Shell from './employee/Shell'
 import Overview from './employee/Overview'
 import Send from './employee/Send'
@@ -20,6 +22,8 @@ export default function App() {
             <Route path="/kudos" element={<DashboardPage />} />
             <Route path="/kudos/team/:teamId" element={<TeamDetailPage />} />
             <Route path="/kudos/network" element={<NetworkMapPage />} />
+            <Route path="/kudos/relationships" element={<RelationshipsPage />} />
+            <Route path="/kudos/relationships/:personId" element={<PersonDetailPage />} />
 
             {/* Employee — jong */}
             <Route path="/me" element={<Shell />}>

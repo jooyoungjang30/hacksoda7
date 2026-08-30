@@ -17,10 +17,12 @@ export function ForceGraph({
   nodes,
   links,
   insights,
+  onNodeClick,
 }: {
   nodes: GraphNode[];
   links: GraphLink[];
   insights: GraphInsights;
+  onNodeClick?: (id: string) => void;
 }) {
   const { positionedNodes, positionedLinks, dragStart, dragMove, dragEnd } = useForceLayout(
     nodes,
@@ -33,6 +35,7 @@ export function ForceGraph({
 
   const [hovered, setHovered] = useState<string | null>(null);
   const dragging = useRef<PositionedNode | null>(null);
+  const pointerDownAt = useRef<{ x: number; y: number } | null>(null);
 
   const connectorNode = positionedNodes.find((n) => n.id === insights.connector.person.id);
 
@@ -58,6 +61,7 @@ export function ForceGraph({
     e.stopPropagation(); // don't start a canvas pan
     (e.target as Element).setPointerCapture?.(e.pointerId);
     dragging.current = node;
+    pointerDownAt.current = { x: e.clientX, y: e.clientY };
     dragStart(node);
   }
 
@@ -76,6 +80,14 @@ export function ForceGraph({
     (e.target as Element).releasePointerCapture?.(e.pointerId);
     dragEnd(node);
     dragging.current = null;
+
+    // A drag that never moved is a click — anything more than a few px was a
+    // deliberate reposition, not an attempt to open this person.
+    const start = pointerDownAt.current;
+    pointerDownAt.current = null;
+    if (start && Math.hypot(e.clientX - start.x, e.clientY - start.y) < 4) {
+      onNodeClick?.(node.id);
+    }
   }
 
   return (
