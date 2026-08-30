@@ -3,9 +3,18 @@
 
 -- 1. EDIT THESE TWO LINES, then run the file.
 --    Slack member id: your avatar -> Profile -> ... -> Copy member ID (starts with U).
+-- Replace both placeholders BEFORE running. Left as-is, the first line wipes a
+-- working Slack id and the nudge fails with "channel_not_found".
 update employees set slack_user_id = null;
-update employees set slack_user_id = 'U01ABCDEFGH' where id = 'wei';
-update employees set email = 'YOUR-EMAIL@example.com';
+update employees set slack_user_id = 'PUT-YOUR-SLACK-MEMBER-ID-HERE' where id = 'wei';
+update employees set email = 'PUT-YOUR-EMAIL-HERE';
+
+do $$
+begin
+  if exists (select 1 from employees where slack_user_id like 'PUT-YOUR%') then
+    raise exception 'Edit the slack_user_id and email placeholders above, then re-run.';
+  end if;
+end $$;
 
 -- 2. Who appears in the employee Send picker. It lists people who have a budget,
 --    so this is also the list of colleagues you can thank on stage. Four Tokyo
