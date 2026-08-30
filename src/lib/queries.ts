@@ -71,7 +71,13 @@ export async function sendKudos(input: {
     .update({ spent_cents: budget.spent_cents + input.amountCents })
     .eq('employee_id', input.senderId)
 
-  // Fire and forget. A dead API key must never block a send on stage.
+  // Fire and forget, all of them. A dead key or a SodaGift outage must never
+  // block a send on stage — the kudos is already committed above.
+  fetch('/api/gift', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ kudosId: kudos.id }),
+  }).catch(() => {})
+
   const signal = fetch('/api/signal', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ kudosId: kudos.id }),
