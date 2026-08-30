@@ -28,6 +28,7 @@ export type KudosRow = {
   amount_cents: number; message: string; followed_preference: boolean
   nudge_id: number | null; status: 'unclaimed' | 'claimed' | 'expired'
   expires_at: string; claimed_at: string | null; created_at: string
+  redemption_code: string | null
   signal_behavior: string | null; signal_values: string[] | null
   signal_specificity: number | null
   sender_name: string; sender_initials: string; sender_color: string

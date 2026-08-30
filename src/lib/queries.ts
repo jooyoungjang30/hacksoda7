@@ -24,6 +24,17 @@ export async function getPreferences(employeeId: string) {
     ({ rank: r.rank, card: r.gift_cards as GiftCard }))
 }
 
+/** Replaces the whole top-3. `cardIds` is in rank order, 0–3 entries. */
+export async function savePreferences(employeeId: string, cardIds: string[]) {
+  await db.from('gift_preferences').delete().eq('employee_id', employeeId)
+  if (!cardIds.length) return
+  const rows = cardIds.slice(0, 3).map((gift_card_id, i) => ({
+    employee_id: employeeId, rank: i + 1, gift_card_id,
+  }))
+  const { error } = await db.from('gift_preferences').insert(rows)
+  if (error) throw error
+}
+
 export async function getCatalog() {
   const { data, error } = await db.from('gift_cards').select('*').order('brand')
   if (error) throw error
