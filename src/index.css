@@ -1,3 +1,24 @@
+@import "tailwindcss";
+
+/* 주영's admin half is Tailwind; these @theme tokens generate its utilities.
+   Same values as the :root block below — both were taken from the mockup. */
+@theme {
+  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+
+  --color-brand: #5B21B6;
+  --color-brand-dark: #4C1D95;
+  --color-brand-soft: #F3EDFD;
+
+  --color-ink: #1F2430;
+  --color-muted: #7C8190;
+  --color-line: #E7E4EE;
+  --color-surface: #FAFAFC;
+
+  --color-good: #0F7A55;   --color-good-bg: #E2F5EC;
+  --color-warn: #8F5106;   --color-warn-bg: #FDF0DC;
+  --color-crit: #A8211A;   --color-crit-bg: #FCE7E5;
+}
+
 /* Design tokens lifted from 주영's mockup so both halves look like one product. */
 :root {
   --violet-900: #2E1065;
@@ -68,7 +89,7 @@ button { font: inherit; cursor: pointer; }
 .nav-i.off { opacity: .35; pointer-events: none; }
 
 .who-switch {
-  margin-top: auto; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18);
+  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18);
   color: #fff; border-radius: 7px; padding: 7px 9px; font-size: 12px; width: 100%;
 }
 .who-switch option { color: #000; }

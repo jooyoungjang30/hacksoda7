@@ -54,8 +54,13 @@ export default function Shell() {
         <span className="nav-i off"><em>▦</em> Order history</span>
         <span className="nav-i off"><em>⚙</em> Setting</span>
 
+        <NavLink to="/kudos" className="nav-i" style={{ marginTop: 'auto', opacity: .55 }}>
+          <em>↤</em> HR dashboard
+        </NavLink>
+
         <select
           className="who-switch"
+          style={{ marginTop: 8 }}
           value={me}
           onChange={e => setCurrentUser(e.target.value)}
           aria-label="Switch person"
