@@ -5,7 +5,7 @@ const db = createClient(
   process.env.VITE_SUPABASE_URL!,
   process.env.VITE_SUPABASE_ANON_KEY!
 )
-const APP = process.env.APP_URL!
+const APP = (process.env.APP_URL ?? '').replace(/\/$/, '')
 
 async function slack(method: string, body: Record<string, unknown>) {
   const token = process.env.SLACK_BOT_TOKEN
@@ -61,6 +61,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 }
 
 async function send({ targetId = 'wei', suggestedTo = 'priya' }) {
+  if (!/^https?:\/\//.test(APP))
+    throw new Error(
+      `APP_URL is "${APP || 'unset'}" — Slack rejects a button whose url is not ` +
+      `absolute. Set APP_URL to your https://….vercel.app URL in Vercel ` +
+      `(Production), then redeploy.`
+    )
+
   const { data: target } = await db.from('employees').select('*').eq('id', targetId).single()
   const { data: budget } = await db.from('budgets').select('*').eq('employee_id', targetId).single()
   const { data: sug } = await db.from('employees').select('*').eq('id', suggestedTo).single()
