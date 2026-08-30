@@ -68,3 +68,33 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
+
+---
+
+## Project-specific: Kudos Gift Tracker
+
+Vite + React 19 + TypeScript + react-router-dom 7 + Supabase. See `README.md` for
+setup and scripts. Rules below are durable constraints from the build plans
+(`IMPLEMENTATION_PLAN.md`, `IMPLEMENTATION_PLAN_EMPLOYEE.md`) that still apply to
+any future change:
+
+- **HR admin vs employee are different styling worlds.** HR (`/kudos/*`,
+  `src/screens/`, `src/components/ui/`) uses Tailwind v4. Employee (`/me/*`,
+  `src/employee/`) uses plain CSS classes appended to `src/index.css`. Don't
+  import one side's components/classes into the other.
+- **Never call `new Date()` / `Date.now()`.** Import `TODAY` from
+  `src/lib/clock.ts`. The seeded demo data (budgets, expiries, "days left") is
+  anchored to a frozen date; live time makes it wrong.
+- **All reads and writes go through `src/lib/queries.ts` / `src/hooks/*`.**
+  Don't call the Supabase client (`src/lib/supabase.ts`) directly from a
+  component, and don't hand-author a number that could instead be derived from
+  the data already fetched.
+- **No new dependencies without asking.** The stack is deliberately minimal —
+  no MUI/shadcn, no react-query/redux/zustand, no chart or toast library beyond
+  what's already here.
+- **Desktop only.** Fixed min-width layouts matching the mockup; no responsive
+  breakpoints.
+- **SodaGift is a real sandbox API** (`api/gift.ts`, `api/nudge.ts`,
+  `api/signal.ts`, `scripts/sync-catalog.mjs`). It's gated on `SODA_API_KEY`
+  being set and must fail soft — a SodaGift outage should never block a kudos
+  from being recorded.

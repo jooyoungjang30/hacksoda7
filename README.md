@@ -1,32 +1,62 @@
-# React + TypeScript + Vite
+# Kudos Gift Tracker
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Peer-to-peer kudos with real gift cards attached. Employees send colleagues a kudos
+message plus a gift card (from their top-3 preferences); HR gets a dashboard,
+team drill-downs, and a network map of who's recognizing whom. Sending a kudos
+places a real order through the SodaGift sandbox API.
 
-Currently, two official plugins are available:
+Two halves of the app, built by different people — don't cross their styling:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **HR admin** (`/kudos`, `/kudos/team/:teamId`, `/kudos/network`) — Tailwind v4,
+  components in `src/screens/` and `src/components/ui/`.
+- **Employee** (`/me/*`: overview, send, preferences, received) — plain CSS
+  classes in `src/index.css`, components in `src/employee/`.
 
-## React Compiler
+## Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Vite · React 19 · TypeScript · react-router-dom 7 · Supabase (Postgres, no auth,
+RLS off) · Tailwind v4 (HR side only) · d3-force (network map) · Vercel functions
+for the SodaGift integration.
 
-## Expanding the Oxlint configuration
+## Getting started
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+1. `npm install`
+2. Create a Supabase project, then run `supabase/schema.sql` followed by
+   `supabase/seed.sql` in the SQL editor (or `soda-full-catalog.sql` /
+   `hr-dataset.sql` for the fuller catalog/dataset variants).
+3. Copy `.env.local` (or create it) with:
+   ```
+   VITE_SUPABASE_URL=...
+   VITE_SUPABASE_ANON_KEY=...
+   ```
+4. `npm run dev`
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
+Gift orders (`api/gift.ts`) only fire against the real SodaGift sandbox if
+`SODA_API_KEY` is set in the Vercel/local environment; without it, sends are
+skipped gracefully (kudos are still recorded).
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Scripts
+
+- `npm run dev` — start the Vite dev server
+- `npm run build` — typecheck (`tsc -b`) then build
+- `npm run lint` — oxlint
+- `npm run preview` — preview the production build
+- `node scripts/sync-catalog.mjs [COUNTRY]` — pull the live SodaGift sandbox
+  catalog and print SQL to refresh `gift_cards` (needs `SODA_API_KEY`)
+
+## Data flow
+
+All numbers on screen are derived from Supabase via `src/lib/queries.ts` and the
+`src/hooks/*` — never hand-authored in a component. All writes go through
+`src/lib/queries.ts` too; components don't call the Supabase client directly.
+The demo clock is frozen: date math imports `TODAY` from `src/lib/clock.ts`
+rather than calling `new Date()`, so the seeded figures (days-until-expiry,
+budget resets) stay stable.
+
+## Docs
+
+- `kudos-gift-tracker-spec.html` — visual/behavior spec (source of truth for the
+  mockup)
+- `IMPLEMENTATION_PLAN.md` — HR admin build plan (§1.1–1.4)
+- `IMPLEMENTATION_PLAN_EMPLOYEE.md` — employee views build plan (§2.1, 2.3, 2.4)
+- `CLAUDE.md` — coding guidelines for this repo
