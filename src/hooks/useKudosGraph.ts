@@ -9,7 +9,11 @@ export interface GraphNode {
   name: string;
   teamId: TeamId;
   officeId: string;
+  /** Colour when grouped by team (the default view). */
   color: string;
+  /** Colour when grouped by office. Both are dormant-aware, so the view can pick
+   *  one without re-deriving the "no activity in 90 days" rule. */
+  officeColor: string;
   r: number;
   receivedCents: number;
   isDormant: boolean;
@@ -19,7 +23,11 @@ export interface GraphLink {
   source: PersonId;
   target: PersonId;
   width: number;
+  /** Giver's team colour. */
   color: string;
+  /** Giver's office colour — used when the map is grouped by office, so an edge
+   *  crossing between clusters is legible as coming from one side. */
+  officeColor: string;
 }
 
 /** One manager and the people on this list who report to them — the unit an HR
@@ -350,14 +358,20 @@ export function buildKudosGraph({
       officeId: person.officeId,
       // Colour is the office, not the team: the demo's whole point is that the
       // gap runs along the office line, and that has to be visible at a glance.
-      color: dormant ? DORMANT_COLOR : (officeById(person.officeId)?.color ?? teamById(person.teamId).color),
+      color: dormant ? DORMANT_COLOR : teamById(person.teamId).color,
+      officeColor: dormant
+        ? DORMANT_COLOR
+        : (officeById(person.officeId)?.color ?? teamById(person.teamId).color),
       r: clamp(3 + Math.sqrt(receivedCents / 100) * 0.5, 3, 9),
       receivedCents,
       isDormant: dormant,
     };
   });
 
-  const aggregated = new Map<string, { source: PersonId; target: PersonId; amount: number; color: string }>();
+  const aggregated = new Map<
+    string,
+    { source: PersonId; target: PersonId; amount: number; color: string; officeColor: string }
+  >();
   for (const k of kudos) {
     if (k.fromId === k.toId) continue;
     if (!peopleIds.has(k.fromId) || !peopleIds.has(k.toId)) continue;
@@ -371,8 +385,14 @@ export function buildKudosGraph({
     if (existing) {
       existing.amount += k.amountCents;
     } else {
-      const giverTeam = people.find((p) => p.id === k.fromId)!.teamId;
-      aggregated.set(key, { source: k.fromId, target: k.toId, amount: k.amountCents, color: teamById(giverTeam).color });
+      const giver = people.find((p) => p.id === k.fromId)!;
+      aggregated.set(key, {
+        source: k.fromId,
+        target: k.toId,
+        amount: k.amountCents,
+        color: teamById(giver.teamId).color,
+        officeColor: officeById(giver.officeId)?.color ?? teamById(giver.teamId).color,
+      });
     }
   }
 
@@ -381,6 +401,7 @@ export function buildKudosGraph({
     target: a.target,
     width: clamp(1 + a.amount / 1500, 1, 3),
     color: a.color,
+    officeColor: a.officeColor,
   }));
 
   return { nodes, links, insights: computeInsights(people, teams, kudos, offices) };

@@ -23,6 +23,7 @@ export interface PositionedLink {
   target: PositionedNode;
   width: number;
   color: string;
+  officeColor: string;
 }
 
 const TEAM_ORDER: TeamId[] = ['engineering', 'design', 'marketing', 'sales', 'people-ops', 'finance'];
@@ -121,6 +122,7 @@ export function useForceLayout(
       target: string | PositionedNode;
       width: number;
       color: string;
+      officeColor: string;
     }>;
 
     forceSimulation(nodeCopies)
@@ -143,6 +145,7 @@ export function useForceLayout(
       target: l.target as PositionedNode,
       width: l.width,
       color: l.color,
+      officeColor: l.officeColor,
     }));
 
     return { positionedNodes: nodeCopies, positionedLinks: built };

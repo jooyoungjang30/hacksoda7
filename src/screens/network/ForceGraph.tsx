@@ -58,6 +58,13 @@ export function ForceGraph({
     useZoomPan(WIDTH, HEIGHT);
 
   const [hovered, setHovered] = useState<string | null>(null);
+
+  // Colour follows the grouping: teams when the map is arranged by team, offices
+  // when it is arranged by office. Anything else leaves the legend describing a
+  // picture that isn't on screen.
+  const byOffice = clusterBy === 'office';
+  const nodeFill = (n: { color: string; officeColor: string }) => (byOffice ? n.officeColor : n.color);
+  const linkStroke = (l: { color: string; officeColor: string }) => (byOffice ? l.officeColor : l.color);
   const dragging = useRef<PositionedNode | null>(null);
   const pointerDownAt = useRef<{ x: number; y: number } | null>(null);
 
@@ -146,7 +153,7 @@ export function ForceGraph({
               y1={l.source.y}
               x2={l.target.x}
               y2={l.target.y}
-              stroke={l.color}
+              stroke={linkStroke(l)}
               strokeWidth={l.width * k}
               opacity={linkDim(l)}
               style={{ transition: 'opacity 160ms ease' }}
@@ -193,7 +200,7 @@ export function ForceGraph({
                   cx={n.x}
                   cy={n.y}
                   r={n.r}
-                  fill={n.color}
+                  fill={nodeFill(n)}
                   stroke={focused ? '#fff' : 'rgba(255,255,255,0.25)'}
                   strokeWidth={(focused ? 2 : 1) * k}
                 />

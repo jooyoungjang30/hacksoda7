@@ -78,27 +78,45 @@ export function NetworkMapPage() {
 
             <Card className="p-4">
               <div className="mb-3 text-[10.5px] font-semibold tracking-wider text-muted uppercase">Legend</div>
-              {/* Node colour is the office, so that is what the legend has to name.
-                  Teams are still listed below it, greyed, because the team filter
-                  above uses them. */}
+              {/* The legend names whatever the colours currently mean. Grouped by
+                  office, that is the two sites; otherwise it is the teams. */}
               <div className="grid grid-cols-2 gap-x-5 gap-y-1.5 text-xs">
-                {offices.map((o) => (
-                  <div key={o.id} className="flex items-center gap-2">
-                    <i className="h-2.5 w-2.5 flex-none rounded-full" style={{ background: o.color }} />
-                    <b>{o.name}</b>
-                    <span className="text-muted">{o.country}</span>
-                    <span className="ml-auto text-muted tabular-nums">
-                      {people.filter((p) => p.officeId === o.id).length}
-                    </span>
-                  </div>
-                ))}
+                {groupByOffice
+                  ? offices.map((o) => (
+                      <div key={o.id} className="flex items-center gap-2">
+                        <i
+                          className="h-2.5 w-2.5 flex-none rounded-full"
+                          style={{ background: o.color }}
+                        />
+                        <b>{o.name}</b>
+                        <span className="text-muted">{o.country}</span>
+                        <span className="ml-auto text-muted tabular-nums">
+                          {people.filter((p) => p.officeId === o.id).length}
+                        </span>
+                      </div>
+                    ))
+                  : teams.map((t) => (
+                      <div key={t.id} className="flex items-center gap-2">
+                        <i
+                          className="h-2.5 w-2.5 flex-none rounded-full"
+                          style={{ background: t.color }}
+                        />
+                        {t.name}
+                        <span className="ml-auto text-muted tabular-nums">
+                          {people.filter((p) => p.teamId === t.id).length}
+                        </span>
+                      </div>
+                    ))}
               </div>
               <div className="mt-3.5 flex flex-col gap-1 border-t border-line pt-3 text-[11px] text-muted">
                 <div className="flex items-center gap-2">
                   <i className="h-2.5 w-2.5 flex-none rounded-full bg-[#B9AECF]" />
                   Grey node — no kudos given or received in 90 days
                 </div>
-                <div>Node colour — office · node size — kudos received</div>
+                <div>
+                  Node colour — {groupByOffice ? 'office' : 'team'} · node size — kudos received ·
+                  edge colour — the giver&rsquo;s {groupByOffice ? 'office' : 'team'}
+                </div>
                 <div>Click a person to see their full relationship history</div>
                 <div className="flex items-center gap-2">
                   <i className="h-2.5 w-2.5 flex-none rounded-full border-2 border-dashed border-[#F4739E]" />
