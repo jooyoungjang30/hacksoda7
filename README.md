@@ -60,3 +60,9 @@ budget resets) stay stable.
 - `IMPLEMENTATION_PLAN.md` — HR admin build plan (§1.1–1.4)
 - `IMPLEMENTATION_PLAN_EMPLOYEE.md` — employee views build plan (§2.1, 2.3, 2.4)
 - `CLAUDE.md` — coding guidelines for this repo
+- [`src/README.md`](src/README.md) — directory-by-directory index of the app
+  (`lib/`, `hooks/`, `screens/`, `employee/`, `components/`); [`api/README.md`](api/README.md)
+  and [`supabase/README.md`](supabase/README.md) cover the backend. Each
+  directory's README says what's in it and why, so you don't need to open every
+  file (or hand a whole tree to an LLM) to know where something lives — this
+  matters more as the repo grows past what fits in one context window.
