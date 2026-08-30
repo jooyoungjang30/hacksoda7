@@ -35,7 +35,9 @@ for t in random.sample(austin_cov, 11):
 
 # "It came back four times." Four thank-yous reached Tokyo in ninety days,
 # three of them from the one Austin engineer whose shift overlaps.
-bridge = next(a for a in austin if by_id[a]['team'] == 'engineering' and a not in (MGR,))
+KEEP = {'wei','priya','sofia','dana','leah','tomas','ana','aisha'}
+bridge = next(a for a in austin
+              if by_id[a]['team'] == 'engineering' and a != MGR and a not in KEEP)
 for t in random.sample(tokyo_cov, 3):
     push(bridge, t)
 push(random.choice([a for a in austin_senders if a not in (bridge, MGR)]),
