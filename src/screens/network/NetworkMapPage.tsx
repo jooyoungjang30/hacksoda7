@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AppShell } from '../../components/shell/AppShell';
 import { PageHeader } from '../../components/shell/PageHeader';
 import { PageTabs } from '../../components/shell/PageTabs';
@@ -11,6 +12,7 @@ import type { TeamId } from '../../lib/types';
 
 export function NetworkMapPage() {
   const { people, teams, kudos, loading } = useHrDataset();
+  const navigate = useNavigate();
   const [teamFilter, setTeamFilter] = useState<TeamId | 'all'>('all');
   const [crossTeamOnly, setCrossTeamOnly] = useState(false);
 
@@ -53,7 +55,12 @@ export function NetworkMapPage() {
             </div>
 
             <Card className="overflow-hidden border-[#2A2438] bg-[#14121C] p-0">
-              <ForceGraph nodes={nodes} links={links} insights={insights} />
+              <ForceGraph
+                nodes={nodes}
+                links={links}
+                insights={insights}
+                onNodeClick={(id) => navigate(`/kudos/relationships/${id}`)}
+              />
             </Card>
 
             <Card className="p-4">
@@ -75,6 +82,7 @@ export function NetworkMapPage() {
                   Grey node — no kudos given or received in 90 days
                 </div>
                 <div>Node size — kudos received · edge colour — the giver's team</div>
+                <div>Click a person to see their full relationship history</div>
                 <div className="flex items-center gap-2">
                   <i className="h-2.5 w-2.5 flex-none rounded-full border-2 border-dashed border-[#F4739E]" />
                   Dashed ring — the connector (bridges the most teams)

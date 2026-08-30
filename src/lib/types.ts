@@ -33,7 +33,7 @@ export interface Kudo {
 }
 
 export type PaceStatus = 'ahead' | 'on' | 'behind' | 'far_behind';
-export type NudgeTemplate = 'unused_budget' | 'unclaimed_gift';
+export type NudgeTemplate = 'unused_budget' | 'unclaimed_gift' | 'manager_gap';
 
 export interface NudgeRecord {
   personId: PersonId;
@@ -98,4 +98,43 @@ export interface CompanyStats {
   openCount: number;
   expiringSoonCents: number; // unclaimed, expires <= 30d
   expiringSoonCount: number;
+}
+
+// --- Relationships tab (single-person view of the same kudos records) ---
+
+/** A one-word reason a person surfaces in the directory. Priority order when more
+ * than one applies: earlier entries are more actionable and win. */
+export type PersonFlag = 'unreached' | 'single_source' | 'receive_only' | 'manager_gap' | 'team_only' | null;
+
+export interface PersonDirectoryRow {
+  person: Person;
+  manager: Person | null;
+  receivedCents: number;
+  givenCents: number;
+  connectionCount: number; // distinct colleagues exchanged with, either direction
+  lastExchangeAt: string | null;
+  flag: PersonFlag;
+}
+
+/** One line in the reporting-line diagram — the manager, or a colleague this
+ * person has exchanged kudos with. */
+export interface RelationshipEdge {
+  person: Person;
+  totalCents: number; // combined value of kudos in both directions
+  direction: 'given' | 'received' | 'both';
+}
+
+export interface PersonExchange {
+  kudo: Kudo;
+  direction: 'in' | 'out';
+  other: Person;
+}
+
+export interface PersonDetail {
+  stats: MemberStats;
+  manager: Person | null;
+  managerLink: RelationshipEdge | null; // null when never exchanged with the manager
+  connections: RelationshipEdge[]; // sorted by totalCents descending, manager excluded
+  exchanges: PersonExchange[]; // sorted newest first
+  flag: PersonFlag;
 }

@@ -5,20 +5,13 @@ import {
 } from '../lib/queries'
 import { usd, type Employee, type GiftCard } from '../lib/supabase'
 import { resolveCurrentUser } from '../lib/currentUser'
+import { GiftMark } from './GiftMark'
 
 const DENOMS = [500, 1000, 1500, 2000, 2500, 3000]
 const MAX_CHARS = 175
 
 type Pref = { rank: number; card: GiftCard }
 type Signal = { behavior?: string; values?: string[]; specificity?: number; skipped?: string }
-
-function GiftMark({ card }: { card: GiftCard }) {
-  if (card.image_url) {
-    return <img className="sw" src={card.image_url} alt="" loading="lazy"
-                style={{ objectFit: 'cover', background: '#fff' }} />
-  }
-  return <span className="sw" style={{ background: card.swatch }}>{card.glyph}</span>
-}
 
 export default function Send() {
   const me = resolveCurrentUser()
