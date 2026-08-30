@@ -4,15 +4,11 @@
 -- Safe to run any number of times. Does NOT drop tables — the seed survives.
 
 -- 1. Remove everything the demo created.
---    The watermark is set once, after all seed data is loaded, so this deletes
---    only kudos sent during a rehearsal — never the 187-row HR dataset.
-create table if not exists demo_watermark (max_kudos_id bigint);
-insert into demo_watermark (max_kudos_id)
-  select coalesce(max(id), 0) from kudos
-  where not exists (select 1 from demo_watermark);
-
+--    demo_watermark is written once by fix-watermark.sql and never touched here,
+--    so this deletes only rehearsal kudos — never the 187-row HR dataset.
 delete from nudges;
-delete from kudos where id > (select max_kudos_id from demo_watermark);
+delete from kudos
+ where id > (select max_kudos_id from demo_watermark where id = 1);
 
 -- 2. Put the budgets back.
 update budgets set spent_cents = v.spent, allocated_cents = 8000, period = 'FY2026',
