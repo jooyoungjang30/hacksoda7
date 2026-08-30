@@ -158,7 +158,6 @@ export function ForceGraph({
               stroke={linkStroke(l)}
               strokeWidth={l.width * k}
               opacity={linkDim(l)}
-              style={{ transition: 'opacity 160ms ease' }}
             />
           ))}
         </g>
@@ -181,7 +180,7 @@ export function ForceGraph({
               <g
                 key={n.id}
                 opacity={dim(n.id)}
-                style={{ transition: 'opacity 160ms ease', cursor: 'pointer' }}
+                style={{ cursor: 'pointer' }}
                 onPointerEnter={() => setHovered(n.id)}
                 onPointerLeave={() => setHovered((h) => (h === n.id ? null : h))}
                 onPointerDown={(e) => onNodePointerDown(e, n)}
@@ -190,10 +189,11 @@ export function ForceGraph({
                 onPointerCancel={onNodePointerUp}
               >
                 {/* Halo: cheap glow that reads on the dark ground without an SVG filter.
-                    No transition of its own — the parent g's opacity transition already
-                    fades it, and a second opacity transition on a gradient fill is what
-                    causes the black-square flicker at high zoom (Chromium/Skia re-rasterizes
-                    the gradient on every transition frame). */}
+                    Dim/undim is instant (no CSS opacity transition) on this, the node group,
+                    and the links — with ~200 nodes and hundreds of links all re-evaluating
+                    opacity on every hover change, transitioning that many elements at once
+                    promotes a burst of GPU compositing layers that can flash black tiles
+                    while hovering fast between nodes (Chromium/Skia raster/tile pressure). */}
                 <circle
                   cx={n.x}
                   cy={n.y}
