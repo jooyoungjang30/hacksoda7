@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { getActivity, getBudget, getPreferences, getReceived } from '../lib/queries'
 import { usd, type KudosRow } from '../lib/supabase'
 import { resolveCurrentUser } from '../lib/currentUser'
-import { daysUntilReset } from '../lib/clock'
+import { daysUntilReset, FISCAL_YEAR } from '../lib/clock'
 import { shortDate } from '../lib/format'
 import { GiftMark } from './GiftMark'
 
@@ -48,7 +48,7 @@ export default function Overview() {
         <div className="kpi">
           <div className="lab">Left to give</div>
           <div className="big">{budget ? usd(budget.left_cents) : '—'}</div>
-          <div className="sub">of your {budget ? usd(budget.allocated_cents) : '—'} for 2026</div>
+          <div className="sub">of your {budget ? usd(budget.allocated_cents) : '—'} for {FISCAL_YEAR}</div>
           <div className="bar"><i style={{ width: `${pct}%` }} /></div>
           <div className="sub" style={{ marginTop: 8 }}>
             <span className="pill warn">{daysUntilReset()} days until it resets</span>

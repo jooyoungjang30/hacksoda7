@@ -4,6 +4,7 @@
 export const TODAY = new Date('2026-08-29T12:00:00Z');
 export const FY_START = new Date('2026-01-01T00:00:00Z');
 export const FY_END = new Date('2026-12-31T23:59:59Z');
+export const FISCAL_YEAR = FY_START.getUTCFullYear();
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 

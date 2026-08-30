@@ -202,7 +202,8 @@ export function GraphInsights({ insights }: { insights: GraphInsightsData }) {
             {insights.managerGap.example && (
               <InsightCard title="Manager hasn't reached them" stat={String(insights.managerGap.count)} tone="attention">
                 {insights.managerGap.example.peerGivers} peers recognize {insights.managerGap.example.person.name},
-                but {insights.managerGap.example.manager.name} hasn't in 90 days — a manager conversation, not an
+                but {insights.managerGap.example.person.name.split(' ')[0]}'s manager,{' '}
+                {insights.managerGap.example.manager.name}, hasn't in 90 days — a manager conversation, not an
                 employee one.
                 <ActionList groups={insights.managerGap.groups} onPersonClick={onPersonClick} />
               </InsightCard>
