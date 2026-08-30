@@ -1,0 +1,2042 @@
+<title>Kudos Gift Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<style>
+/* ============ DOCUMENT TOKENS ============ */
+:root{
+  --paper:#F6F4F9; --surface:#FFFFFF; --surface-2:#FBFAFD;
+  --ink:#1A1327; --ink-2:#4A4160; --muted:#77708A;
+  --rule:#E3DEEC; --rule-strong:#CFC7E0;
+  --accent:#5B21B6; --accent-soft:#EDE6FA; --accent-ink:#5B21B6;
+  --redline:#C2185B; --redline-soft:#FBE6EE;
+  --good:#0F7A55; --warn:#A85B06; --crit:#B3261E;
+  --band:#2B1259; --band-ink:#F3EEFC;
+  --shadow:0 1px 2px rgba(26,19,39,.06), 0 10px 28px -14px rgba(26,19,39,.22);
+  --f-disp:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --f-prose:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --f-ui:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#12101A; --surface:#1B1826; --surface-2:#211D30;
+    --ink:#EEEAF6; --ink-2:#C4BCD6; --muted:#948CA8;
+    --rule:#302A42; --rule-strong:#463D5E;
+    --accent:#B197FC; --accent-soft:#2A2140; --accent-ink:#C4B0FF;
+    --redline:#F4739E; --redline-soft:#3A1E2C;
+    --good:#4ADE9B; --warn:#F0B357; --crit:#F58C86;
+    --band:#1E0C42; --band-ink:#EFE7FF;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -14px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#12101A; --surface:#1B1826; --surface-2:#211D30;
+  --ink:#EEEAF6; --ink-2:#C4BCD6; --muted:#948CA8;
+  --rule:#302A42; --rule-strong:#463D5E;
+  --accent:#B197FC; --accent-soft:#2A2140; --accent-ink:#C4B0FF;
+  --redline:#F4739E; --redline-soft:#3A1E2C;
+  --good:#4ADE9B; --warn:#F0B357; --crit:#F58C86;
+  --band:#1E0C42; --band-ink:#EFE7FF;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -14px rgba(0,0,0,.6);
+}
+
+*{box-sizing:border-box}
+body{background:var(--paper); color:var(--ink); font-family:var(--f-prose); font-size:17px; line-height:1.6;}
+h1,h2,h3,h4{font-family:var(--f-disp); text-wrap:balance; margin:0;}
+a{color:var(--accent-ink)}
+:focus-visible{outline:2px solid var(--redline); outline-offset:2px; border-radius:3px}
+
+/* ============ PAGE SCAFFOLD ============ */
+.doc-wrap{max-width:1340px; margin:0 auto; padding:0 28px 96px;}
+.doc-prose{max-width:68ch}
+.doc-prose p{margin:0 0 14px}
+
+.doc-bar{position:sticky; top:0; z-index:60; background:color-mix(in srgb, var(--paper) 88%, transparent);
+  backdrop-filter:blur(10px); border-bottom:1px solid var(--rule);}
+.doc-bar-in{max-width:1340px; margin:0 auto; padding:11px 28px; display:flex; align-items:center; gap:18px; flex-wrap:wrap}
+.doc-bar strong{font-family:var(--f-disp); font-size:14px; letter-spacing:-.01em}
+.doc-bar nav{margin-left:auto; display:flex; gap:4px; flex-wrap:wrap}
+.doc-bar nav a{font-family:var(--f-ui); font-size:12.5px; text-decoration:none; color:var(--ink-2);
+  padding:5px 10px; border-radius:999px; border:1px solid transparent}
+.doc-bar nav a:hover{background:var(--accent-soft); border-color:var(--rule-strong); color:var(--accent-ink)}
+
+.eyebrow{font-family:var(--f-ui); font-size:11px; font-weight:600; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--muted)}
+
+.doc-head{padding:64px 0 40px; border-bottom:1px solid var(--rule)}
+.doc-head h1{font-size:clamp(38px,6vw,62px); font-weight:700; letter-spacing:-.03em; line-height:1.02; margin:14px 0 0}
+.doc-head .lede{font-size:21px; line-height:1.5; color:var(--ink-2); max-width:60ch; margin:20px 0 0}
+.meta{display:flex; flex-wrap:wrap; gap:0; margin:36px 0 0; border-top:1px solid var(--rule); font-family:var(--f-ui)}
+.meta div{padding:14px 22px 0 0; margin-right:22px; border-right:1px solid var(--rule); min-width:130px}
+.meta div:last-child{border-right:0}
+.meta dt{font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); font-weight:600}
+.meta dd{margin:5px 0 0; font-size:14px; font-weight:500; color:var(--ink)}
+
+/* ============ SECTIONS ============ */
+.sec{padding:56px 0 0}
+.sec-h{display:flex; align-items:baseline; gap:14px; margin:0 0 10px; flex-wrap:wrap}
+.sec-h .num{font-family:var(--f-ui); font-size:13px; font-weight:700; color:var(--redline);
+  font-variant-numeric:tabular-nums; letter-spacing:.02em}
+.sec-h h3{font-size:27px; font-weight:600; letter-spacing:-.02em}
+.sec-sub{color:var(--ink-2); max-width:70ch; margin:0 0 26px; font-size:16.5px}
+
+.band{margin:96px -28px 8px; padding:52px 28px; background:var(--band); color:var(--band-ink); border-radius:4px}
+.band-in{max-width:1284px; margin:0 auto}
+.band .eyebrow{color:#C9A8FF}
+.band h2{font-size:clamp(30px,4.6vw,46px); font-weight:700; letter-spacing:-.028em; margin:12px 0 0; color:#fff}
+.band p{max-width:64ch; margin:16px 0 0; color:#DCCFF3; font-size:17.5px}
+.band .who{display:inline-flex; align-items:center; gap:9px; margin-top:24px; font-family:var(--f-ui);
+  font-size:13px; font-weight:600; background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.22);
+  padding:8px 15px; border-radius:999px; color:#fff}
+
+/* ============ CALLOUT / LEGEND ============ */
+.mark{position:absolute; z-index:5; width:23px; height:23px; border-radius:50%; background:var(--redline);
+  color:#fff; font-family:var(--f-ui); font-size:12px; font-weight:700; display:flex; align-items:center;
+  justify-content:center; box-shadow:0 0 0 3px rgba(255,255,255,.92), 0 2px 6px rgba(0,0,0,.3);
+  font-variant-numeric:tabular-nums}
+.legend{margin:22px 0 0; display:grid; grid-template-columns:repeat(auto-fit,minmax(330px,1fr)); gap:0 40px}
+.legend div{display:flex; gap:12px; padding:11px 0; border-top:1px solid var(--rule); align-items:flex-start}
+.legend b{flex:0 0 auto; width:21px; height:21px; border-radius:50%; background:var(--redline-soft);
+  color:var(--redline); font-family:var(--f-ui); font-size:11.5px; font-weight:700; display:flex;
+  align-items:center; justify-content:center; margin-top:3px; font-variant-numeric:tabular-nums}
+.legend p{margin:0; font-size:15.5px; line-height:1.52; color:var(--ink-2)}
+.legend p em{font-style:normal; color:var(--ink); font-weight:600}
+
+.note{border-left:3px solid var(--accent); background:var(--accent-soft); padding:14px 18px;
+  margin:26px 0 0; border-radius:0 5px 5px 0; font-size:15.5px; color:var(--ink-2); max-width:72ch}
+.note strong{color:var(--ink); font-family:var(--f-ui); font-size:13.5px}
+.note.warn{border-left-color:var(--warn); background:color-mix(in srgb,var(--warn) 9%, var(--surface))}
+
+/* ============ MOCKUP FRAME (fixed light palette — depicts a light product) ============ */
+.frame{margin:26px 0 0; border:1px solid var(--rule-strong); border-radius:9px; background:var(--surface-2);
+  box-shadow:var(--shadow); overflow:hidden}
+.frame-cap{display:flex; align-items:center; gap:9px; padding:9px 14px; border-bottom:1px solid var(--rule);
+  font-family:var(--f-ui); font-size:11.5px; color:var(--muted); letter-spacing:.03em}
+.dots{display:flex; gap:5px}
+.dots i{width:9px; height:9px; border-radius:50%; background:var(--rule-strong)}
+.scroller{overflow-x:auto; background:#EEEAF3}
+.mock{width:1240px; position:relative; font-family:var(--f-ui); font-size:13px; line-height:1.45;
+  color:#1F2430; background:#fff; -webkit-font-smoothing:antialiased}
+.mock *{box-sizing:border-box}
+.mock h1,.mock h2,.mock h3,.mock h4{font-family:var(--f-ui); letter-spacing:-.01em}
+
+/* --- product shell --- */
+.shell{display:flex; min-height:600px}
+.side{flex:0 0 232px; background:linear-gradient(178deg,#4A1E8F 0%,#3A1571 46%,#2A0E52 100%); color:#fff; padding:22px 0 0}
+.logo{display:flex; align-items:center; gap:9px; padding:0 20px 20px}
+.logo i{width:31px; height:31px; border-radius:8px; background:#fff; display:flex; align-items:center;
+  justify-content:center; font-size:15px; font-style:normal}
+.logo b{font-size:17px; font-weight:700; letter-spacing:-.02em; display:block; line-height:1.1}
+.logo span{font-size:9.5px; opacity:.7; letter-spacing:.05em}
+.side hr{border:0; border-top:1px solid rgba(255,255,255,.16); margin:0 20px 16px}
+.wallet{margin:0 18px 20px; border:1px solid rgba(255,255,255,.28); border-radius:8px; padding:11px 13px}
+.wallet b{display:block; font-size:14px; font-weight:600}
+.wallet span{font-size:12px; opacity:.78}
+.nav-i{display:flex; align-items:center; gap:11px; padding:12px 20px; font-size:13.5px; color:rgba(255,255,255,.72)}
+.nav-i em{font-style:normal; width:17px; text-align:center; opacity:.85; font-size:13px}
+.nav-i.on{background:rgba(0,0,0,.3); color:#fff; font-weight:600; box-shadow:inset 3px 0 0 #C9A8FF}
+.nav-i.new{position:relative}
+.nav-i.new::after{content:"NEW"; margin-left:auto; font-size:8.5px; font-weight:700; letter-spacing:.08em;
+  background:#C2185B; color:#fff; padding:2px 5px; border-radius:3px}
+.main{flex:1; background:#fff; min-width:0}
+.top{display:flex; align-items:center; gap:12px; padding:20px 26px 0}
+.top h2{font-size:23px; font-weight:700; margin:0}
+.top .sp{margin-left:auto; display:flex; gap:9px}
+.tabs{display:flex; gap:2px; padding:0 26px; border-bottom:1px solid #E5E7EB; margin-top:16px}
+.tab{padding:11px 20px; font-size:13.5px; color:#8A8F9C; border:1px solid transparent; border-bottom:0;
+  border-radius:7px 7px 0 0; position:relative; top:1px}
+.tab.on{color:#4C1D95; font-weight:600; background:#fff; border-color:#DDD6EA; box-shadow:0 2px 0 #fff}
+.body{padding:24px 26px 32px; background:#FAFAFC; min-height:520px}
+
+/* --- product atoms --- */
+.btn{display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:7px; font-size:12.5px;
+  font-weight:500; border:1px solid #D9D5E4; background:#fff; color:#33303D; white-space:nowrap}
+.btn.pri{background:#5B21B6; border-color:#5B21B6; color:#fff; font-weight:600}
+.btn.nudge{border-color:#5B21B6; color:#5B21B6; font-weight:600; background:#F6F1FE}
+.btn.sm{padding:5px 10px; font-size:11.5px; border-radius:6px}
+.btn.gh{background:transparent; border-color:transparent; color:#5B21B6; font-weight:600}
+.card{background:#fff; border:1px solid #E7E4EE; border-radius:10px}
+.card-h{display:flex; align-items:center; gap:10px; padding:15px 18px; border-bottom:1px solid #EFEDF4}
+.card-h h3{font-size:15px; font-weight:600; margin:0}
+.card-h .sub{font-size:11.5px; color:#7C8190}
+.card-h .sp{margin-left:auto; display:flex; gap:7px; align-items:center}
+.grid{display:grid; gap:14px}
+.pill{display:inline-flex; align-items:center; gap:5px; font-size:10.5px; font-weight:600; padding:3px 8px;
+  border-radius:999px; letter-spacing:.02em; white-space:nowrap}
+.pill.good{background:#E2F5EC; color:#0F7A55}
+.pill.warn{background:#FDF0DC; color:#8F5106}
+.pill.crit{background:#FCE7E5; color:#A8211A}
+.pill.neu{background:#EEECF3; color:#63687A}
+.pill.vio{background:#F0E8FE; color:#5B21B6}
+.bar{height:7px; border-radius:999px; background:#EDEAF3; overflow:hidden; position:relative}
+.bar i{display:block; height:100%; border-radius:999px; background:#5B21B6}
+.bar i.good{background:#128C61} .bar i.warn{background:#C67608} .bar i.crit{background:#C2352C}
+.bar .pace{position:absolute; top:-3px; bottom:-3px; width:2px; background:#1F2430; opacity:.55}
+.av{width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-size:10.5px; font-weight:700; color:#fff; flex:0 0 auto; letter-spacing:.02em}
+.tbl{width:100%; border-collapse:collapse; font-size:12.5px}
+.tbl th{text-align:left; font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:#8A8F9C;
+  font-weight:600; padding:10px 14px; border-bottom:1px solid #EFEDF4; background:#FCFBFE}
+.tbl td{padding:11px 14px; border-bottom:1px solid #F2F0F7; vertical-align:middle}
+.tbl tr:last-child td{border-bottom:0}
+.tbl .num{font-variant-numeric:tabular-nums; text-align:right}
+.who-cell{display:flex; align-items:center; gap:10px}
+.who-cell b{font-size:12.5px; font-weight:600; display:block; line-height:1.25}
+.who-cell span{font-size:11px; color:#7C8190}
+.kpi{background:#fff; border:1px solid #E7E4EE; border-radius:10px; padding:16px 18px}
+.kpi .lab{font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:#8A8F9C; font-weight:600}
+.kpi .big{font-size:29px; font-weight:700; letter-spacing:-.025em; margin:7px 0 2px; font-variant-numeric:tabular-nums}
+.kpi .sub{font-size:11.5px; color:#7C8190}
+.muted{color:#7C8190}
+.tnum{font-variant-numeric:tabular-nums}
+
+@media (max-width:760px){
+  .doc-wrap{padding:0 16px 72px}
+  .band{margin:72px -16px 8px; padding:40px 18px}
+  .meta div{border-right:0; margin-right:0; min-width:44%}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+</style>
+
+<div class="doc-bar">
+  <div class="doc-bar-in">
+    <strong>Kudos Gift Tracker</strong>
+    <span class="eyebrow" style="font-size:10px">UX Spec · v0.2 Draft</span>
+    <nav>
+      <a href="#ia">Where it lives</a>
+      <a href="#part1">HR view</a>
+      <a href="#part2">Employee view</a>
+      <a href="#open">Open questions</a>
+    </nav>
+  </div>
+</div>
+
+<div class="doc-wrap">
+
+  <header class="doc-head">
+    <div class="eyebrow">SodaGift for Biz · New module</div>
+    <h1>Kudos Gift Tracker</h1>
+    <p class="lede">A peer recognition budget every employee spends, and the reporting HR needs to see whether
+      it is actually being spent — and actually being claimed.</p>
+    <dl class="meta">
+      <div><dt>Document</dt><dd>UI &amp; UX specification</dd></div>
+      <div><dt>Version</dt><dd>0.2 — Draft</dd></div>
+      <div><dt>Date</dt><dd>Aug 30, 2026</dd></div>
+      <div><dt>Personas</dt><dd>HR admin · Employee</dd></div>
+      <div><dt>Screens</dt><dd>14</dd></div>
+      <div><dt>Data</dt><dd>Mock throughout</dd></div>
+    </dl>
+  </header>
+
+  <section class="sec doc-prose">
+    <div class="sec-h"><span class="num">§0</span><h3>The model in one paragraph</h3></div>
+    <p>Every employee receives <strong>$80 of Kudos budget per calendar year</strong>. They spend it by sending
+      gift cards to colleagues they want to thank — any amount, any number of people, until the $80 runs out.
+      The budget resets on Dec 31 and does not roll over.</p>
+    <p>That creates two failure modes HR cares about, and the dashboard is built around both. Budget can go
+      <em>unspent</em> — people forget, or don't know the program exists. And gift cards that were sent can go
+      <em>unclaimed</em> — the money left the company but the recipient never redeemed it. Usage and claim rate
+      are tracked as separate numbers throughout, because the fix for each is different.</p>
+    <p>The lever HR pulls in both cases is the same: a <strong>Nudge</strong>, which sends a pre-written Slack
+      message. Nudge buttons appear on every row where a person or team is behind.</p>
+
+    <div class="note">
+      <strong>HOW TO READ THIS DOCUMENT</strong><br>
+      Crimson circles sit on each mockup and are explained in the numbered list directly beneath it. Mockups are
+      rendered at 1240px — scroll them sideways on a narrow screen. All names, teams and figures are fabricated
+      sample data. Mockups keep a light palette in both document themes, because they depict a light product.
+    </div>
+  </section>
+
+  <section class="sec" id="ia">
+    <div class="sec-h"><span class="num">§1</span><h3>Where it lives in the product</h3></div>
+    <p class="sec-sub">Kudos Gift Tracker is a new top-level item in the existing left sidebar, sitting directly
+      under <em>Order history</em>. Like <em>Create order</em>, it is a page with tabbed subpages — here,
+      <strong>Dashboard</strong>, <strong>Network Map</strong> and <strong>Relationships</strong>. The employee-facing experience in Part 2 is a
+      separate top-level item, <strong>My Kudos</strong>, visible to everyone rather than to admins.</p>
+  </section>
+</div>
+
+<div class="band" id="part1">
+  <div class="band-in">
+    <div class="eyebrow">Part 1 of 2</div>
+    <h2>HR Admin Experience</h2>
+    <p>Monitoring and intervention. This persona does not send kudos from these screens — they watch whether
+      everyone else is, and nudge the people who aren't. Access is limited to admin roles.</p>
+    <span class="who">👤 Persona — Leah Osborne, People Ops · admin role</span>
+  </div>
+</div>
+
+<div class="doc-wrap">
+
+  <section class="sec">
+    <div class="sec-h"><span class="num">1.1</span><h3>Dashboard</h3></div>
+    <p class="sec-sub">The landing screen. Four company-level numbers across the top, then the three sections
+      requested: team usage, the leaderboard, and claim tracking. Every section carries its own Nudge affordance
+      so HR can act without leaving the page.</p>
+
+    <div class="frame">
+      <div class="frame-cap"><span class="dots"><i></i><i></i><i></i></span> Kudos Gift Tracker → Dashboard</div>
+      <div class="scroller"><div class="mock">
+        <div class="shell">
+          <div class="side">
+            <div class="logo"><i>🎁</i><div><b>SodaGift</b><span>for Biz</span></div></div>
+            <hr>
+            <div class="wallet"><b>Lumen Labs</b><span>47 employees · FY2026</span></div>
+            <div class="nav-i"><em>▤</em> Create order</div>
+            <div class="nav-i"><em>▦</em> Order history</div>
+            <div class="nav-i on new" style="position:relative"><em>♡</em> Kudos Gift Tracker
+              <span class="mark" style="top:-10px; left:200px">1</span></div>
+            <div class="nav-i"><em>◔</em> Funding</div>
+            <div class="nav-i"><em>⚙</em> Setting</div>
+            <div class="nav-i"><em>▷</em> API Docs</div>
+          </div>
+
+          <div class="main">
+            <div class="top">
+              <h2>Kudos Gift Tracker</h2>
+              <div class="sp">
+                <span class="btn">FY2026 ▾</span>
+                <span class="btn">Export CSV ⤓</span>
+              </div>
+            </div>
+            <div class="tabs" style="position:relative">
+              <div class="tab on">Dashboard</div>
+              <div class="tab">Network Map</div><div class="tab">Relationships</div>
+              <span class="mark" style="top:2px; left:126px">2</span>
+            </div>
+
+            <div class="body">
+              <!-- KPI ROW -->
+              <div class="grid" style="grid-template-columns:repeat(4,1fr); position:relative">
+                <span class="mark" style="top:-10px; left:-10px">3</span>
+                <div class="kpi">
+                  <div class="lab">Budget used</div>
+                  <div class="big">56%</div>
+                  <div class="sub">$2,121 of $3,760 given</div>
+                  <div class="bar" style="margin-top:11px"><i class="warn" style="width:56%"></i><span class="pace" style="left:66%"></span></div>
+                  <div class="sub" style="margin-top:7px"><span class="pill warn">10 pts behind pace</span></div>
+                </div>
+                <div class="kpi">
+                  <div class="lab">Participation</div>
+                  <div class="big">39<span style="font-size:17px; color:#8A8F9C; font-weight:500">/47</span></div>
+                  <div class="sub">employees have given at least once</div>
+                  <div class="bar" style="margin-top:11px"><i class="good" style="width:83%"></i></div>
+                  <div class="sub" style="margin-top:7px"><span class="pill good">83% · healthy</span></div>
+                </div>
+                <div class="kpi">
+                  <div class="lab">Claim rate</div>
+                  <div class="big">83%</div>
+                  <div class="sub">$1,759 of $2,121 redeemed</div>
+                  <div class="bar" style="margin-top:11px"><i class="good" style="width:83%"></i></div>
+                  <div class="sub" style="margin-top:7px"><span class="pill neu">32 cards outstanding</span></div>
+                </div>
+                <div class="kpi" style="border-color:#F0C9C5; background:#FFFCFC">
+                  <div class="lab" style="color:#A8211A">At risk</div>
+                  <div class="big" style="color:#A8211A">$118</div>
+                  <div class="sub">9 gift cards expire within 30 days</div>
+                  <div class="sub" style="margin-top:13px"><span class="btn nudge sm">◈ Nudge all 9 recipients</span></div>
+                </div>
+              </div>
+
+              <!-- TEAM USAGE -->
+              <div class="card" style="margin-top:20px; position:relative">
+                <span class="mark" style="top:-10px; left:-10px">4</span>
+                <div class="card-h">
+                  <h3>Usage by team</h3>
+                  <span class="sub">Share of each team's total allowance given out · black tick marks year-to-date pace (66%)</span>
+                  <span class="sp"><span class="btn sm">Sort: lowest first ▾</span></span>
+                </div>
+                <div class="grid" style="grid-template-columns:repeat(3,1fr); padding:18px">
+
+                  <div style="border:1px solid #E7E4EE; border-radius:9px; padding:15px; position:relative">
+                    <span class="mark" style="top:-10px; left:-10px">5</span>
+                    <div style="display:flex; align-items:center; gap:9px">
+                      <span class="av" style="background:#64748B">FN</span>
+                      <div><b style="font-size:13.5px">Finance</b><div class="sub muted" style="font-size:11px">5 members · $400 allowance</div></div>
+                      <span style="margin-left:auto; font-size:23px; font-weight:700" class="tnum">23%</span>
+                    </div>
+                    <div class="bar" style="margin-top:12px"><i class="crit" style="width:23%"></i><span class="pace" style="left:66%"></span></div>
+                    <div style="display:flex; align-items:center; margin-top:11px; gap:8px">
+                      <span class="pill crit">43 pts behind</span>
+                      <span class="muted tnum" style="font-size:11.5px">$92 given</span>
+                    </div>
+                    <div style="display:flex; gap:7px; margin-top:13px">
+                      <span class="btn sm" style="flex:1; justify-content:center">View team →</span>
+                      <span class="btn nudge sm">◈ Nudge team</span>
+                    </div>
+                  </div>
+
+                  <div style="border:1px solid #E7E4EE; border-radius:9px; padding:15px">
+                    <div style="display:flex; align-items:center; gap:9px">
+                      <span class="av" style="background:#2563EB">SL</span>
+                      <div><b style="font-size:13.5px">Sales</b><div class="sub muted" style="font-size:11px">10 members · $800 allowance</div></div>
+                      <span style="margin-left:auto; font-size:23px; font-weight:700" class="tnum">36%</span>
+                    </div>
+                    <div class="bar" style="margin-top:12px"><i class="crit" style="width:36%"></i><span class="pace" style="left:66%"></span></div>
+                    <div style="display:flex; align-items:center; margin-top:11px; gap:8px">
+                      <span class="pill crit">30 pts behind</span>
+                      <span class="muted tnum" style="font-size:11.5px">$286 given</span>
+                    </div>
+                    <div style="display:flex; gap:7px; margin-top:13px">
+                      <span class="btn sm" style="flex:1; justify-content:center">View team →</span>
+                      <span class="btn nudge sm">◈ Nudge team</span>
+                    </div>
+                  </div>
+
+                  <div style="border:1px solid #E7E4EE; border-radius:9px; padding:15px">
+                    <div style="display:flex; align-items:center; gap:9px">
+                      <span class="av" style="background:#7C3AED">EN</span>
+                      <div><b style="font-size:13.5px">Engineering</b><div class="sub muted" style="font-size:11px">14 members · $1,120 allowance</div></div>
+                      <span style="margin-left:auto; font-size:23px; font-weight:700" class="tnum">54%</span>
+                    </div>
+                    <div class="bar" style="margin-top:12px"><i class="warn" style="width:54%"></i><span class="pace" style="left:66%"></span></div>
+                    <div style="display:flex; align-items:center; margin-top:11px; gap:8px">
+                      <span class="pill warn">12 pts behind</span>
+                      <span class="muted tnum" style="font-size:11.5px">$604 given</span>
+                    </div>
+                    <div style="display:flex; gap:7px; margin-top:13px">
+                      <span class="btn sm" style="flex:1; justify-content:center">View team →</span>
+                      <span class="btn nudge sm">◈ Nudge team</span>
+                    </div>
+                  </div>
+
+                  <div style="border:1px solid #E7E4EE; border-radius:9px; padding:15px">
+                    <div style="display:flex; align-items:center; gap:9px">
+                      <span class="av" style="background:#DB6D0B">MK</span>
+                      <div><b style="font-size:13.5px">Marketing</b><div class="sub muted" style="font-size:11px">8 members · $640 allowance</div></div>
+                      <span style="margin-left:auto; font-size:23px; font-weight:700" class="tnum">73%</span>
+                    </div>
+                    <div class="bar" style="margin-top:12px"><i class="good" style="width:73%"></i><span class="pace" style="left:66%"></span></div>
+                    <div style="display:flex; align-items:center; margin-top:11px; gap:8px">
+                      <span class="pill good">On pace</span>
+                      <span class="muted tnum" style="font-size:11.5px">$470 given</span>
+                    </div>
+                    <div style="display:flex; gap:7px; margin-top:13px">
+                      <span class="btn sm" style="flex:1; justify-content:center">View team →</span>
+                      <span class="btn nudge sm">◈ Nudge team</span>
+                    </div>
+                  </div>
+
+                  <div style="border:1px solid #E7E4EE; border-radius:9px; padding:15px">
+                    <div style="display:flex; align-items:center; gap:9px">
+                      <span class="av" style="background:#0D9488">DS</span>
+                      <div><b style="font-size:13.5px">Design</b><div class="sub muted" style="font-size:11px">6 members · $480 allowance</div></div>
+                      <span style="margin-left:auto; font-size:23px; font-weight:700" class="tnum">81%</span>
+                    </div>
+                    <div class="bar" style="margin-top:12px"><i class="good" style="width:81%"></i><span class="pace" style="left:66%"></span></div>
+                    <div style="display:flex; align-items:center; margin-top:11px; gap:8px">
+                      <span class="pill good">Ahead of pace</span>
+                      <span class="muted tnum" style="font-size:11.5px">$391 given</span>
+                    </div>
+                    <div style="display:flex; gap:7px; margin-top:13px">
+                      <span class="btn sm" style="flex:1; justify-content:center">View team →</span>
+                      <span class="btn nudge sm">◈ Nudge team</span>
+                    </div>
+                  </div>
+
+                  <div style="border:1px solid #E7E4EE; border-radius:9px; padding:15px">
+                    <div style="display:flex; align-items:center; gap:9px">
+                      <span class="av" style="background:#059669">PO</span>
+                      <div><b style="font-size:13.5px">People Ops</b><div class="sub muted" style="font-size:11px">4 members · $320 allowance</div></div>
+                      <span style="margin-left:auto; font-size:23px; font-weight:700" class="tnum">87%</span>
+                    </div>
+                    <div class="bar" style="margin-top:12px"><i class="good" style="width:87%"></i><span class="pace" style="left:66%"></span></div>
+                    <div style="display:flex; align-items:center; margin-top:11px; gap:8px">
+                      <span class="pill good">Ahead of pace</span>
+                      <span class="muted tnum" style="font-size:11.5px">$278 given</span>
+                    </div>
+                    <div style="display:flex; gap:7px; margin-top:13px">
+                      <span class="btn sm" style="flex:1; justify-content:center">View team →</span>
+                      <span class="btn nudge sm">◈ Nudge team</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- LEADERBOARD + CLAIM -->
+              <div class="grid" style="grid-template-columns:1fr 1.35fr; margin-top:20px; align-items:start">
+
+                <div class="card" style="position:relative">
+                  <span class="mark" style="top:-10px; left:-10px">6</span>
+                  <div class="card-h">
+                    <h3>Most appreciated</h3>
+                    <span class="sub">by Kudos received</span>
+                    <span class="sp"><span class="btn sm">FY2026 ▾</span></span>
+                  </div>
+                  <table class="tbl">
+                    <thead><tr><th style="width:34px">#</th><th>Person</th><th class="num">Received</th><th class="num">Kudos</th><th class="num">Givers</th></tr></thead>
+                    <tbody>
+                      <tr><td style="font-weight:700; color:#B8860B">1</td><td><div class="who-cell"><span class="av" style="background:#7C3AED">PR</span><div><b>Priya Raman</b><span>Engineering</span></div></div></td><td class="num" style="font-weight:700">$145</td><td class="num">11</td><td class="num">9</td></tr>
+                      <tr><td style="font-weight:700; color:#8A8F9C">2</td><td><div class="who-cell"><span class="av" style="background:#7C3AED">WC</span><div><b>Wei Chen</b><span>Engineering</span></div></div></td><td class="num" style="font-weight:700">$110</td><td class="num">9</td><td class="num">7</td></tr>
+                      <tr><td style="font-weight:700; color:#A0703C">3</td><td><div class="who-cell"><span class="av" style="background:#0D9488">SM</span><div><b>Sofia Marchetti</b><span>Design</span></div></div></td><td class="num" style="font-weight:700">$105</td><td class="num">12</td><td class="num">8</td></tr>
+                      <tr><td class="muted">4</td><td><div class="who-cell"><span class="av" style="background:#7C3AED">DW</span><div><b>Dana Whitfield</b><span>Engineering</span></div></div></td><td class="num">$95</td><td class="num">7</td><td class="num">6</td></tr>
+                      <tr><td class="muted">5</td><td><div class="who-cell"><span class="av" style="background:#059669">LO</span><div><b>Leah Osborne</b><span>People Ops</span></div></div></td><td class="num">$90</td><td class="num">10</td><td class="num">9</td></tr>
+                      <tr><td class="muted">6</td><td><div class="who-cell"><span class="av" style="background:#DB6D0B">AD</span><div><b>Ana Duarte</b><span>Marketing</span></div></div></td><td class="num">$75</td><td class="num">6</td><td class="num">5</td></tr>
+                      <tr><td class="muted">7</td><td><div class="who-cell"><span class="av" style="background:#2563EB">KM</span><div><b>Kofi Mensah</b><span>Sales</span></div></div></td><td class="num">$70</td><td class="num">6</td><td class="num">6</td></tr>
+                    </tbody>
+                  </table>
+                  <div style="padding:11px 16px; border-top:1px solid #EFEDF4"><span class="btn gh sm">View full ranking (47) →</span></div>
+                </div>
+
+                <div class="card" style="position:relative">
+                  <span class="mark" style="top:-10px; left:-10px">7</span>
+                  <div class="card-h">
+                    <h3>Gift cards claimed</h3>
+                    <span class="sub">by receiving team</span>
+                    <span class="sp"><span class="btn sm">Show individuals ▾</span></span>
+                  </div>
+                  <table class="tbl">
+                    <thead><tr><th>Team</th><th class="num">Received</th><th class="num">Claimed</th><th style="width:150px">Claim rate</th><th class="num">Open</th><th style="width:96px"></th></tr></thead>
+                    <tbody>
+                      <tr>
+                        <td><div class="who-cell"><span class="av" style="background:#2563EB">SL</span><div><b>Sales</b><span>10 members</span></div></div></td>
+                        <td class="num">$318</td><td class="num">$211</td>
+                        <td><div style="display:flex; align-items:center; gap:9px"><div class="bar" style="flex:1"><i class="crit" style="width:66%"></i></div><b class="tnum" style="font-size:12px">66%</b></div></td>
+                        <td class="num"><span class="pill crit">12</span></td>
+                        <td><span class="btn nudge sm">◈ Nudge</span></td>
+                      </tr>
+                      <tr>
+                        <td><div class="who-cell"><span class="av" style="background:#64748B">FN</span><div><b>Finance</b><span>5 members</span></div></div></td>
+                        <td class="num">$110</td><td class="num">$55</td>
+                        <td><div style="display:flex; align-items:center; gap:9px"><div class="bar" style="flex:1"><i class="crit" style="width:50%"></i></div><b class="tnum" style="font-size:12px">50%</b></div></td>
+                        <td class="num"><span class="pill crit">4</span></td>
+                        <td><span class="btn nudge sm">◈ Nudge</span></td>
+                      </tr>
+                      <tr>
+                        <td><div class="who-cell"><span class="av" style="background:#DB6D0B">MK</span><div><b>Marketing</b><span>8 members</span></div></div></td>
+                        <td class="num">$355</td><td class="num">$291</td>
+                        <td><div style="display:flex; align-items:center; gap:9px"><div class="bar" style="flex:1"><i class="warn" style="width:82%"></i></div><b class="tnum" style="font-size:12px">82%</b></div></td>
+                        <td class="num"><span class="pill warn">6</span></td>
+                        <td><span class="btn nudge sm">◈ Nudge</span></td>
+                      </tr>
+                      <tr>
+                        <td><div class="who-cell"><span class="av" style="background:#7C3AED">EN</span><div><b>Engineering</b><span>14 members</span></div></div></td>
+                        <td class="num">$640</td><td class="num">$571</td>
+                        <td><div style="display:flex; align-items:center; gap:9px"><div class="bar" style="flex:1"><i class="good" style="width:89%"></i></div><b class="tnum" style="font-size:12px">89%</b></div></td>
+                        <td class="num"><span class="pill neu">5</span></td>
+                        <td><span class="btn nudge sm">◈ Nudge</span></td>
+                      </tr>
+                      <tr>
+                        <td><div class="who-cell"><span class="av" style="background:#0D9488">DS</span><div><b>Design</b><span>6 members</span></div></div></td>
+                        <td class="num">$402</td><td class="num">$362</td>
+                        <td><div style="display:flex; align-items:center; gap:9px"><div class="bar" style="flex:1"><i class="good" style="width:90%"></i></div><b class="tnum" style="font-size:12px">90%</b></div></td>
+                        <td class="num"><span class="pill neu">3</span></td>
+                        <td><span class="btn nudge sm">◈ Nudge</span></td>
+                      </tr>
+                      <tr>
+                        <td><div class="who-cell"><span class="av" style="background:#059669">PO</span><div><b>People Ops</b><span>4 members</span></div></div></td>
+                        <td class="num">$296</td><td class="num">$269</td>
+                        <td><div style="display:flex; align-items:center; gap:9px"><div class="bar" style="flex:1"><i class="good" style="width:91%"></i></div><b class="tnum" style="font-size:12px">91%</b></div></td>
+                        <td class="num"><span class="pill neu">2</span></td>
+                        <td><span class="btn nudge sm">◈ Nudge</span></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <div style="padding:11px 16px; border-top:1px solid #EFEDF4; display:flex; align-items:center; gap:10px">
+                    <span class="muted" style="font-size:11.5px">32 open cards · $362 unclaimed · 9 expiring within 30 days</span>
+                    <span class="btn nudge sm" style="margin-left:auto">◈ Nudge everyone with open cards</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="legend">
+      <div><b>1</b><p><em>New sidebar entry</em>, placed under Order history. Carries a NEW badge for the first
+        30 days after rollout, then it drops away.</p></div>
+      <div><b>2</b><p><em>Tabbed subpages</em>, matching the Digital Gift Card / Digital Voucher pattern on
+        Create order. Network Map is the second tab — detailed in 1.4.</p></div>
+      <div><b>3</b><p><em>Four company KPIs.</em> Budget used and Claim rate are deliberately separate numbers:
+        unspent budget is an engagement problem, unclaimed cards are a fulfilment problem. The fourth tile is
+        red because expiring cards are the only genuinely time-boxed item on the page.</p></div>
+      <div><b>4</b><p><em>Usage by team</em> — the first requested section. Sorted lowest-first by default, so
+        the teams needing attention are top-left rather than buried.</p></div>
+      <div><b>5</b><p><em>Team card.</em> The percentage is share of allowance given. The black tick on the bar
+        is year-to-date pace (66% of FY2026 elapsed), which turns a bare number into a judgement — 54% only
+        reads as "behind" against that marker. <em>View team</em> opens 1.2; <em>Nudge team</em> fires 1.3.</p></div>
+      <div><b>6</b><p><em>Leaderboard</em> — ranked by dollars received. Kudos count and distinct giver count sit
+        alongside, because $145 from nine people means something different than $145 from one.</p></div>
+      <div><b>7</b><p><em>Claim tracking</em> — the third requested section, measured on the <em>receiving</em>
+        team. Nudge here goes to people holding unclaimed cards. The dropdown switches the same table between
+        team rows and individual rows.</p></div>
+    </div>
+
+    <div class="note warn">
+      <strong>ASSUMPTION — PACE MARKER</strong><br>
+      "Behind pace" compares budget used against the share of the calendar year elapsed. This assumes giving
+      should be roughly linear across the year. If Lumen Labs expects seasonal spikes (year-end, review cycles),
+      the comparison baseline needs to change and so does every warning colour on this page.
+    </div>
+  </section>
+</div>
+
+<div class="doc-wrap">
+  <section class="sec">
+    <div class="sec-h"><span class="num">1.2</span><h3>Team drill-down</h3></div>
+    <p class="sec-sub">Reached by clicking any team card. Same page, drilled state — a breadcrumb replaces nothing
+      and the tabs stay put, so HR knows they haven't left the tracker. One row per member, with the same three
+      measures the dashboard shows at team level.</p>
+
+    <div class="frame">
+      <div class="frame-cap"><span class="dots"><i></i><i></i><i></i></span> Kudos Gift Tracker → Dashboard → Engineering</div>
+      <div class="scroller"><div class="mock">
+        <div class="shell">
+          <div class="side">
+            <div class="logo"><i>🎁</i><div><b>SodaGift</b><span>for Biz</span></div></div>
+            <hr>
+            <div class="wallet"><b>Lumen Labs</b><span>47 employees · FY2026</span></div>
+            <div class="nav-i"><em>▤</em> Create order</div>
+            <div class="nav-i"><em>▦</em> Order history</div>
+            <div class="nav-i on"><em>♡</em> Kudos Gift Tracker</div>
+            <div class="nav-i"><em>◔</em> Funding</div>
+            <div class="nav-i"><em>⚙</em> Setting</div>
+            <div class="nav-i"><em>▷</em> API Docs</div>
+          </div>
+          <div class="main">
+            <div class="top" style="position:relative">
+              <div>
+                <div style="font-size:11.5px; color:#8A8F9C; margin-bottom:3px">
+                  <span style="color:#5B21B6">Dashboard</span> &nbsp;›&nbsp; Engineering</div>
+                <h2>Engineering</h2>
+              </div>
+              <div class="sp">
+                <span class="btn">FY2026 ▾</span>
+                <span class="btn nudge">◈ Nudge 6 below pace</span>
+              </div>
+              <span class="mark" style="top:34px; left:110px">1</span>
+              <span class="mark" style="top:26px; right:12px">2</span>
+            </div>
+            <div class="tabs"><div class="tab on">Dashboard</div><div class="tab">Network Map</div><div class="tab">Relationships</div></div>
+            <div class="body">
+
+              <div class="grid" style="grid-template-columns:repeat(4,1fr)">
+                <div class="kpi"><div class="lab">Team budget used</div><div class="big">54%</div>
+                  <div class="sub">$604 of $1,120</div>
+                  <div class="bar" style="margin-top:11px"><i class="warn" style="width:54%"></i><span class="pace" style="left:66%"></span></div></div>
+                <div class="kpi"><div class="lab">Members giving</div><div class="big">12<span style="font-size:17px;color:#8A8F9C;font-weight:500">/14</span></div><div class="sub">2 have never sent kudos</div></div>
+                <div class="kpi"><div class="lab">Received by team</div><div class="big">$640</div><div class="sub">89% claimed · 5 cards open</div></div>
+                <div class="kpi"><div class="lab">Avg per member</div><div class="big">$43</div><div class="sub">company average is $45</div></div>
+              </div>
+
+              <div class="card" style="margin-top:20px; position:relative">
+                <span class="mark" style="top:-10px; left:-10px">3</span>
+                <div class="card-h">
+                  <h3>Members</h3><span class="sub">14 people · sorted by budget used, lowest first</span>
+                  <span class="sp"><span class="btn sm">Filter: all ▾</span><span class="btn sm">Export ⤓</span></span>
+                </div>
+                <table class="tbl">
+                  <thead><tr>
+                    <th>Member</th><th style="width:190px">Budget used</th><th class="num">Given</th>
+                    <th class="num">Received</th><th>Claim status</th><th class="num">Last given</th><th style="width:96px"></th>
+                  </tr></thead>
+                  <tbody>
+                    <tr style="background:#FFFCFC">
+                      <td><div class="who-cell"><span class="av" style="background:#9CA3AF">JK</span><div><b>Jonas Kerr</b><span>Engineer · joined Mar 2026</span></div></div></td>
+                      <td><div style="display:flex; align-items:center; gap:9px"><div class="bar" style="flex:1"><i class="crit" style="width:2%"></i><span class="pace" style="left:66%"></span></div><b class="tnum" style="font-size:12px">0%</b></div></td>
+                      <td class="num">$0</td><td class="num">$25</td>
+                      <td><span class="pill crit">$25 unclaimed</span></td>
+                      <td class="num muted">Never</td>
+                      <td><span class="btn nudge sm">◈ Nudge</span></td>
+                    </tr>
+                    <tr style="background:#FFFCFC">
+                      <td><div class="who-cell"><span class="av" style="background:#7C3AED">RM</span><div><b>Ravi Menon</b><span>Engineer</span></div></div></td>
+                      <td><div style="display:flex; align-items:center; gap:9px"><div class="bar" style="flex:1"><i class="crit" style="width:25%"></i><span class="pace" style="left:66%"></span></div><b class="tnum" style="font-size:12px">25%</b></div></td>
+                      <td class="num">$20</td><td class="num">$30</td>
+                      <td><span class="pill crit">$30 unclaimed · 2</span></td>
+                      <td class="num muted">Jun 30</td>
+                      <td><span class="btn nudge sm">◈ Nudge</span></td>
+                    </tr>
+                    <tr>
+                      <td><div class="who-cell"><span class="av" style="background:#7C3AED">AN</span><div><b>Aisha Nkemdi</b><span>Engineer</span></div></div></td>
+                      <td><div style="display:flex; align-items:center; gap:9px"><div class="bar" style="flex:1"><i class="warn" style="width:56%"></i><span class="pace" style="left:66%"></span></div><b class="tnum" style="font-size:12px">56%</b></div></td>
+                      <td class="num">$45</td><td class="num">$55</td>
+                      <td><span class="pill good">All claimed</span></td>
+                      <td class="num muted">Aug 12</td>
+                      <td><span class="btn nudge sm">◈ Nudge</span></td>
+                    </tr>
+                    <tr>
+                      <td><div class="who-cell"><span class="av" style="background:#7C3AED">WC</span><div><b>Wei Chen</b><span>Senior Engineer</span></div></div></td>
+                      <td><div style="display:flex; align-items:center; gap:9px"><div class="bar" style="flex:1"><i class="warn" style="width:63%"></i><span class="pace" style="left:66%"></span></div><b class="tnum" style="font-size:12px">63%</b></div></td>
+                      <td class="num">$50</td><td class="num" style="font-weight:600">$110</td>
+                      <td><span class="pill warn">$25 unclaimed</span></td>
+                      <td class="num muted">Aug 24</td>
+                      <td><span class="btn nudge sm">◈ Nudge</span></td>
+                    </tr>
+                    <tr>
+                      <td><div class="who-cell"><span class="av" style="background:#7C3AED">TI</span><div><b>Tomás Iglesias</b><span>Engineer</span></div></div></td>
+                      <td><div style="display:flex; align-items:center; gap:9px"><div class="bar" style="flex:1"><i class="warn" style="width:69%"></i><span class="pace" style="left:66%"></span></div><b class="tnum" style="font-size:12px">69%</b></div></td>
+                      <td class="num">$55</td><td class="num">$40</td>
+                      <td><span class="pill good">All claimed</span></td>
+                      <td class="num muted">Aug 19</td>
+                      <td><span class="btn sm" style="opacity:.4">◈ Nudge</span></td>
+                    </tr>
+                    <tr>
+                      <td><div class="who-cell"><span class="av" style="background:#7C3AED">DW</span><div><b>Dana Whitfield</b><span>Senior Engineer</span></div></div></td>
+                      <td><div style="display:flex; align-items:center; gap:9px"><div class="bar" style="flex:1"><i class="good" style="width:81%"></i><span class="pace" style="left:66%"></span></div><b class="tnum" style="font-size:12px">81%</b></div></td>
+                      <td class="num">$65</td><td class="num">$95</td>
+                      <td><span class="pill warn">$25 unclaimed</span></td>
+                      <td class="num muted">Aug 21</td>
+                      <td><span class="btn nudge sm">◈ Nudge</span></td>
+                    </tr>
+                    <tr>
+                      <td><div class="who-cell"><span class="av" style="background:#7C3AED">MB</span><div><b>Marcus Bell</b><span>Engineering Manager</span></div></div></td>
+                      <td><div style="display:flex; align-items:center; gap:9px"><div class="bar" style="flex:1"><i class="good" style="width:90%"></i><span class="pace" style="left:66%"></span></div><b class="tnum" style="font-size:12px">90%</b></div></td>
+                      <td class="num">$72</td><td class="num">$60</td>
+                      <td><span class="pill good">All claimed</span></td>
+                      <td class="num muted">Aug 28</td>
+                      <td><span class="btn sm" style="opacity:.4">◈ Nudge</span></td>
+                    </tr>
+                    <tr>
+                      <td><div class="who-cell"><span class="av" style="background:#7C3AED">PR</span><div><b>Priya Raman</b><span>Staff Engineer</span></div></div></td>
+                      <td><div style="display:flex; align-items:center; gap:9px"><div class="bar" style="flex:1"><i class="good" style="width:100%"></i><span class="pace" style="left:66%"></span></div><b class="tnum" style="font-size:12px">100%</b></div></td>
+                      <td class="num">$80</td><td class="num" style="font-weight:600">$145</td>
+                      <td><span class="pill good">All claimed</span></td>
+                      <td class="num muted">Aug 26</td>
+                      <td><span class="btn sm" style="opacity:.4">◈ Nudge</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div style="padding:11px 16px; border-top:1px solid #EFEDF4; display:flex; align-items:center; position:relative">
+                  <span class="muted" style="font-size:11.5px">Showing 8 of 14 members</span>
+                  <span class="btn gh sm" style="margin-left:auto">Show all →</span>
+                  <span class="mark" style="top:-10px; left:236px">4</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="legend">
+      <div><b>1</b><p><em>Breadcrumb back to the dashboard.</em> The drill-down is a state of the Dashboard tab,
+        not a new destination — the tab bar stays visible and unchanged.</p></div>
+      <div><b>2</b><p><em>Team-level nudge.</em> Same button as the dashboard team card, restated here so HR
+        doesn't have to go back to act. The label names the count it will actually message — six, not
+        fourteen — so a bulk action is never a surprise.</p></div>
+      <div><b>3</b><p><em>One row per member</em>, sorted lowest budget-used first. Giving and receiving are
+        adjacent columns on purpose: Priya at 100% given and $145 received is a different person to manage
+        than Jonas at 0% and $25 sat unclaimed.</p></div>
+      <div><b>4</b><p><em>Disabled nudge state</em> (rows 5, 7, 8) — anyone at or above pace with nothing
+        unclaimed has nothing to be nudged about. Also disabled for 7 days after a nudge is sent.</p></div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <div class="sec-h"><span class="num">1.3</span><h3>What Nudge sends</h3></div>
+    <p class="sec-sub">Nudge sends a pre-written Slack DM. There is no compose step and no editable copy — HR
+      clicks, the message goes. Two templates exist, chosen automatically by which problem the row represents.</p>
+
+    <div class="frame">
+      <div class="frame-cap"><span class="dots"><i></i><i></i><i></i></span> Slack DM from SodaGift app · recipient view</div>
+      <div class="scroller"><div class="mock" style="background:#F7F5FA; padding:26px">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:22px">
+
+          <div style="position:relative">
+            <span class="mark" style="top:-10px; left:-10px">1</span>
+            <div style="font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:#8A8F9C; font-weight:600; margin-bottom:9px">Template A — Unused budget</div>
+            <div style="background:#fff; border:1px solid #E7E4EE; border-radius:10px; padding:17px 18px">
+              <div style="display:flex; gap:11px">
+                <span class="av" style="background:#5B21B6; border-radius:7px; width:34px; height:34px; font-size:15px">🎁</span>
+                <div style="min-width:0">
+                  <div style="margin-bottom:5px"><b style="font-size:13.5px">SodaGift</b>
+                    <span style="background:#E8E5EF; color:#63687A; font-size:9px; font-weight:700; padding:2px 4px; border-radius:3px; margin-left:5px; letter-spacing:.04em">APP</span>
+                    <span class="muted" style="font-size:11px; margin-left:6px">9:02 AM</span></div>
+                  <div style="font-size:13.5px; line-height:1.55">
+                    Hi Wei 👋 You still have <b>$30 of your $80 Kudos budget</b> left to give, and there are
+                    <b>124 days</b> before it resets on Dec 31. Unspent budget doesn't roll over.<br><br>
+                    Someone help you out recently? Say thanks.
+                  </div>
+                  <div style="margin-top:13px"><span class="btn pri sm">Give Kudos</span>
+                    <span class="btn sm" style="margin-left:6px">Not now</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="position:relative">
+            <span class="mark" style="top:-10px; left:-10px">2</span>
+            <div style="font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:#8A8F9C; font-weight:600; margin-bottom:9px">Template B — Unclaimed gift cards</div>
+            <div style="background:#fff; border:1px solid #E7E4EE; border-radius:10px; padding:17px 18px">
+              <div style="display:flex; gap:11px">
+                <span class="av" style="background:#5B21B6; border-radius:7px; width:34px; height:34px; font-size:15px">🎁</span>
+                <div style="min-width:0">
+                  <div style="margin-bottom:5px"><b style="font-size:13.5px">SodaGift</b>
+                    <span style="background:#E8E5EF; color:#63687A; font-size:9px; font-weight:700; padding:2px 4px; border-radius:3px; margin-left:5px; letter-spacing:.04em">APP</span>
+                    <span class="muted" style="font-size:11px; margin-left:6px">9:02 AM</span></div>
+                  <div style="font-size:13.5px; line-height:1.55">
+                    Hi Ravi 👋 You have <b>2 unclaimed Kudos gift cards</b> worth <b>$30</b> waiting for you.
+                    One of them <b style="color:#A8211A">expires Sep 14</b>.<br><br>
+                    Your colleagues sent these to thank you — don't let them lapse.
+                  </div>
+                  <div style="margin-top:13px"><span class="btn pri sm">Claim my gifts</span>
+                    <span class="btn sm" style="margin-left:6px">Not now</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:24px; background:#fff; border:1px solid #E7E4EE; border-radius:10px; padding:17px 20px; position:relative">
+          <span class="mark" style="top:-10px; left:-10px">3</span>
+          <div style="font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:#8A8F9C; font-weight:600; margin-bottom:11px">Sending rules</div>
+          <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:20px; font-size:12.5px; line-height:1.5">
+            <div><b>Team nudge</b><br><span class="muted">Sends Template A as an individual DM to each member below pace. Never posts to a channel.</span></div>
+            <div><b>Rate limit</b><br><span class="muted">One nudge per person per 7 days, across both templates. The button greys out in between.</span></div>
+            <div><b>Confirmation</b><br><span class="muted">HR sees a toast: "Nudged 6 people in Engineering." No preview dialog — the copy is fixed.</span></div>
+            <div><b>Fallback</b><br><span class="muted">If a person has no linked Slack account, the same copy goes by email and the row is flagged.</span></div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="legend">
+      <div><b>1</b><p><em>Template A</em> is the message you specified: how much budget is left, and how long
+        until it's gone. The amount and the day count are the only variable fields.</p></div>
+      <div><b>2</b><p><em>Template B</em> covers nudges fired from the claim-tracking section, where the problem
+        is an unredeemed card rather than unspent budget.</p></div>
+      <div><b>3</b><p><em>Sending rules.</em> The rate limit is the important one — without it a single "Nudge
+        everyone" click could DM the same person twice in a morning from two different sections.</p></div>
+    </div>
+
+    <div class="note warn">
+      <strong>ASSUMPTION — TEMPLATE B</strong><br>
+      You defined the unused-budget message. Template B is my addition, because the claim-tracking section's
+      Nudge button is aimed at people who need to <em>claim</em> a gift, not send one — Template A's copy would
+      be wrong there. Say the word if you'd rather both buttons send the same message.
+    </div>
+  </section>
+</div>
+
+<div class="doc-wrap">
+  <section class="sec">
+    <div class="sec-h"><span class="num">1.4</span><h3>Network Map <span style="font-size:14px; color:var(--muted); font-weight:500">— second tab</span></h3></div>
+    <p class="sec-sub">The subpage tab, structured the way Digital Gift Card / Digital Voucher sit under Create
+      order. A force-directed graph of who thanked whom. Deliberately plain: this exists to answer "how does
+      this team actually work, and who does everyone lean on" — not to look impressive.</p>
+
+    <div class="frame">
+      <div class="frame-cap"><span class="dots"><i></i><i></i><i></i></span> Kudos Gift Tracker → Network Map</div>
+      <div class="scroller"><div class="mock">
+        <div class="shell">
+          <div class="side">
+            <div class="logo"><i>🎁</i><div><b>SodaGift</b><span>for Biz</span></div></div>
+            <hr>
+            <div class="wallet"><b>Lumen Labs</b><span>47 employees · FY2026</span></div>
+            <div class="nav-i"><em>▤</em> Create order</div>
+            <div class="nav-i"><em>▦</em> Order history</div>
+            <div class="nav-i on"><em>♡</em> Kudos Gift Tracker</div>
+            <div class="nav-i"><em>◔</em> Funding</div>
+            <div class="nav-i"><em>⚙</em> Setting</div>
+            <div class="nav-i"><em>▷</em> API Docs</div>
+          </div>
+          <div class="main">
+            <div class="top"><h2>Kudos Gift Tracker</h2>
+              <div class="sp"><span class="btn">FY2026 ▾</span><span class="btn">Export ⤓</span></div></div>
+            <div class="tabs" style="position:relative">
+              <div class="tab">Dashboard</div><div class="tab on">Network Map</div><div class="tab">Relationships</div>
+              <span class="mark" style="top:2px; left:224px">1</span>
+            </div>
+            <div class="body" style="padding:18px 26px 26px">
+
+              <div style="display:flex; gap:16px; margin-bottom:14px; align-items:center; position:relative">
+                <span class="mark" style="top:-11px; left:-10px">2</span>
+                <span class="btn sm">Last 12 months ▾</span>
+                <span class="btn sm">All teams ▾</span>
+                <span class="btn sm">Node size: Kudos received ▾</span>
+                <span class="btn sm" style="border-color:#5B21B6; color:#5B21B6; background:#F6F1FE">☑ Show cross-team only</span>
+                <span class="muted" style="margin-left:auto; font-size:11.5px">24 people · 71 kudos · 38 unique pairs</span>
+              </div>
+
+              <div style="display:flex; gap:16px; align-items:stretch">
+                <div class="card" style="flex:1; padding:0; overflow:hidden; position:relative; background:#FCFBFE">
+                  <span class="mark" style="top:10px; left:10px">3</span>
+                  <svg viewBox="0 0 660 520" style="display:block; width:100%; height:auto" role="img" aria-label="Force-directed graph of kudos sent between 24 colleagues, clustered by team">
+                    <g stroke-linecap="round" fill="none">
+                      <!-- Engineering internal -->
+                      <g stroke="#7C3AED" opacity=".34">
+                        <line x1="150" y1="190" x2="200" y2="240" stroke-width="2.6"/>
+                        <line x1="255" y1="190" x2="200" y2="240" stroke-width="2.2"/>
+                        <line x1="160" y1="310" x2="200" y2="240" stroke-width="1.8"/>
+                        <line x1="205" y1="150" x2="200" y2="240" stroke-width="1.6"/>
+                        <line x1="250" y1="305" x2="255" y2="190" stroke-width="1.4"/>
+                        <line x1="160" y1="310" x2="150" y2="190" stroke-width="1.2"/>
+                        <line x1="110" y1="255" x2="200" y2="240" stroke-width="1.2"/>
+                        <line x1="205" y1="150" x2="150" y2="190" stroke-width="1.3"/>
+                        <line x1="250" y1="305" x2="200" y2="240" stroke-width="1.5"/>
+                        <line x1="95" y1="350" x2="160" y2="310" stroke-width="1" opacity=".5"/>
+                      </g>
+                      <!-- Design internal -->
+                      <g stroke="#0D9488" opacity=".34">
+                        <line x1="290" y1="45" x2="340" y2="85" stroke-width="2"/>
+                        <line x1="395" y1="50" x2="340" y2="85" stroke-width="1.8"/>
+                      </g>
+                      <!-- Marketing internal -->
+                      <g stroke="#DB6D0B" opacity=".34">
+                        <line x1="575" y1="80" x2="515" y2="120" stroke-width="1.8"/>
+                        <line x1="470" y1="70" x2="515" y2="120" stroke-width="1.6"/>
+                      </g>
+                      <!-- Sales internal — closed loop -->
+                      <g stroke="#2563EB" opacity=".42">
+                        <line x1="535" y1="385" x2="595" y2="340" stroke-width="2.4"/>
+                        <line x1="595" y1="340" x2="600" y2="440" stroke-width="2"/>
+                        <line x1="600" y1="440" x2="485" y2="445" stroke-width="1.8"/>
+                        <line x1="485" y1="445" x2="535" y2="385" stroke-width="2.2"/>
+                        <line x1="535" y1="385" x2="600" y2="440" stroke-width="1.6"/>
+                      </g>
+                      <!-- Finance — near-isolated -->
+                      <g stroke="#64748B" opacity=".3">
+                        <line x1="115" y1="445" x2="65" y2="410" stroke-width="1.1"/>
+                      </g>
+                      <!-- Cross-team -->
+                      <g stroke="#0D9488" opacity=".4">
+                        <line x1="340" y1="85" x2="200" y2="240" stroke-width="2"/>
+                        <line x1="340" y1="85" x2="515" y2="120" stroke-width="1.8"/>
+                        <line x1="395" y1="50" x2="515" y2="120" stroke-width="1.2"/>
+                      </g>
+                      <g stroke="#7C3AED" opacity=".4">
+                        <line x1="255" y1="190" x2="340" y2="85" stroke-width="1.5"/>
+                      </g>
+                      <g stroke="#DB6D0B" opacity=".4">
+                        <line x1="515" y1="120" x2="150" y2="190" stroke-width="1.4"/>
+                      </g>
+                      <!-- People Ops — the connector -->
+                      <g stroke="#059669" opacity=".55">
+                        <line x1="390" y1="235" x2="200" y2="240" stroke-width="2.4"/>
+                        <line x1="390" y1="235" x2="340" y2="85" stroke-width="2.2"/>
+                        <line x1="390" y1="235" x2="515" y2="120" stroke-width="2"/>
+                        <line x1="390" y1="235" x2="535" y2="385" stroke-width="2.2"/>
+                        <line x1="390" y1="235" x2="160" y2="310" stroke-width="1.6"/>
+                        <line x1="435" y1="300" x2="390" y2="235" stroke-width="1.6"/>
+                      </g>
+                    </g>
+                    <g font-family="IBM Plex Sans, sans-serif" font-size="8.5" fill="#5A5F6E" text-anchor="middle">
+                      <!-- Engineering -->
+                      <circle cx="200" cy="240" r="18" fill="#7C3AED"/><text x="200" y="269" font-size="9.5" font-weight="600" fill="#2F2540">Priya</text>
+                      <circle cx="150" cy="190" r="15" fill="#7C3AED" opacity=".88"/><text x="150" y="216">Wei</text>
+                      <circle cx="255" cy="190" r="14" fill="#7C3AED" opacity=".88"/><text x="255" y="215">Dana</text>
+                      <circle cx="160" cy="310" r="12" fill="#7C3AED" opacity=".8"/><text x="160" y="333">Marcus</text>
+                      <circle cx="250" cy="305" r="10" fill="#7C3AED" opacity=".8"/><text x="250" y="326">Tomás</text>
+                      <circle cx="205" cy="150" r="11" fill="#7C3AED" opacity=".8"/><text x="205" y="172">Aisha</text>
+                      <circle cx="110" cy="255" r="9" fill="#7C3AED" opacity=".7"/><text x="110" y="275">Ravi</text>
+                      <circle cx="95" cy="350" r="6" fill="#B9AECF"/><text x="95" y="367" fill="#9A94A8">Jonas</text>
+                      <!-- Design -->
+                      <circle cx="340" cy="85" r="16" fill="#0D9488"/><text x="340" y="112" font-size="9.5" font-weight="600" fill="#2F2540">Sofia</text>
+                      <circle cx="290" cy="45" r="10" fill="#0D9488" opacity=".8"/><text x="290" y="66">Noor</text>
+                      <circle cx="395" cy="50" r="9" fill="#0D9488" opacity=".8"/><text x="395" y="70">Ellis</text>
+                      <!-- Marketing -->
+                      <circle cx="515" cy="120" r="14" fill="#DB6D0B"/><text x="515" y="145" font-size="9.5" font-weight="600" fill="#2F2540">Ana</text>
+                      <circle cx="575" cy="80" r="10" fill="#DB6D0B" opacity=".8"/><text x="575" y="101">Pete</text>
+                      <circle cx="470" cy="70" r="9" fill="#DB6D0B" opacity=".8"/><text x="470" y="90">Yuki</text>
+                      <!-- Sales -->
+                      <circle cx="535" cy="385" r="13" fill="#2563EB"/><text x="535" y="409" font-size="9.5" font-weight="600" fill="#2F2540">Kofi</text>
+                      <circle cx="595" cy="340" r="10" fill="#2563EB" opacity=".8"/><text x="595" y="361">Bianca</text>
+                      <circle cx="600" cy="440" r="9" fill="#2563EB" opacity=".8"/><text x="600" y="460">Hal</text>
+                      <circle cx="485" cy="445" r="8" fill="#2563EB" opacity=".8"/><text x="485" y="464">Drew</text>
+                      <!-- People Ops -->
+                      <circle cx="390" cy="235" r="17" fill="#059669"/>
+                      <circle cx="390" cy="235" r="23" fill="none" stroke="#059669" stroke-width="1.3" stroke-dasharray="3 3" opacity=".7"/>
+                      <text x="390" y="270" font-size="9.5" font-weight="600" fill="#2F2540">Leah</text>
+                      <circle cx="435" cy="300" r="9" fill="#059669" opacity=".8"/><text x="435" y="320">Omar</text>
+                      <!-- Finance -->
+                      <circle cx="115" cy="445" r="8" fill="#B9AECF"/><text x="115" y="464" fill="#9A94A8">Grete</text>
+                      <circle cx="65" cy="410" r="6" fill="#B9AECF"/><text x="65" y="427" fill="#9A94A8">Sam</text>
+                      <circle cx="165" cy="485" r="6" fill="#B9AECF"/><text x="165" y="502" fill="#9A94A8">Tal</text>
+                      <!-- annotation ring -->
+                      <circle cx="545" cy="400" r="82" fill="none" stroke="#C2185B" stroke-width="1.4" stroke-dasharray="4 4" opacity=".8"/>
+                    </g>
+                    <g font-family="IBM Plex Sans, sans-serif" font-size="9" fill="#8A8F9C">
+                      <text x="16" y="504">Grey nodes = no kudos given or received in 90 days</text>
+                    </g>
+                  </svg>
+                  <span class="mark" style="top:322px; left:566px">4</span>
+                  <span class="mark" style="top:196px; left:352px">5</span>
+                </div>
+
+                <div style="flex:0 0 258px; display:flex; flex-direction:column; gap:14px">
+                  <div class="card" style="padding:15px 16px">
+                    <div style="font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:#8A8F9C; font-weight:600; margin-bottom:10px">Teams</div>
+                    <div style="display:flex; flex-direction:column; gap:7px; font-size:12px">
+                      <div style="display:flex; align-items:center; gap:8px"><i style="width:9px; height:9px; border-radius:50%; background:#7C3AED"></i> Engineering <span class="muted tnum" style="margin-left:auto">14</span></div>
+                      <div style="display:flex; align-items:center; gap:8px"><i style="width:9px; height:9px; border-radius:50%; background:#0D9488"></i> Design <span class="muted tnum" style="margin-left:auto">6</span></div>
+                      <div style="display:flex; align-items:center; gap:8px"><i style="width:9px; height:9px; border-radius:50%; background:#DB6D0B"></i> Marketing <span class="muted tnum" style="margin-left:auto">8</span></div>
+                      <div style="display:flex; align-items:center; gap:8px"><i style="width:9px; height:9px; border-radius:50%; background:#2563EB"></i> Sales <span class="muted tnum" style="margin-left:auto">10</span></div>
+                      <div style="display:flex; align-items:center; gap:8px"><i style="width:9px; height:9px; border-radius:50%; background:#059669"></i> People Ops <span class="muted tnum" style="margin-left:auto">4</span></div>
+                      <div style="display:flex; align-items:center; gap:8px"><i style="width:9px; height:9px; border-radius:50%; background:#64748B"></i> Finance <span class="muted tnum" style="margin-left:auto">5</span></div>
+                    </div>
+                  </div>
+
+                  <div class="card" style="padding:15px 16px; flex:1; position:relative">
+                    <span class="mark" style="top:-10px; left:-10px">6</span>
+                    <div style="font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:#8A8F9C; font-weight:600; margin-bottom:11px">What the map shows</div>
+                    <div style="display:flex; flex-direction:column; gap:13px; font-size:12px; line-height:1.5">
+                      <div><b style="display:block; margin-bottom:2px">Most relied on</b>
+                        <span class="muted">Priya Raman — thanked by 9 people across 4 teams.</span></div>
+                      <div><b style="display:block; margin-bottom:2px">Bridges the org</b>
+                        <span class="muted">Leah Osborne is the only person giving into 5 different teams.</span></div>
+                      <div><b style="display:block; margin-bottom:2px">Closed cluster</b>
+                        <span class="muted">82% of Sales kudos stay inside Sales — almost no exchange with the rest of the company.</span></div>
+                      <div><b style="display:block; margin-bottom:2px">Disconnected</b>
+                        <span class="muted">6 people neither gave nor received in 90 days — 3 in Finance, 3 in Sales.</span></div>
+                      <div><b style="display:block; margin-bottom:2px">Mutual pairs</b>
+                        <span class="muted">31% of connections go both ways.</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="legend">
+      <div><b>1</b><p><em>Second tab</em> — the subpage pattern you asked for, mirroring how Create order splits
+        into Digital Gift Card / Digital Voucher / Merchandise.</p></div>
+      <div><b>2</b><p><em>Four controls only.</em> Date range, team filter, what node size encodes, and a
+        cross-team toggle that hides within-team edges — the fastest way to see whether a team talks to anyone
+        outside itself.</p></div>
+      <div><b>3</b><p><em>Node size = kudos received</em>, edge thickness = amount given, edge colour = the
+        giver's team. Nodes settle into team clusters on their own; that clustering is the finding, not a
+        layout choice.</p></div>
+      <div><b>4</b><p><em>A closed loop.</em> Sales thanks Sales and almost nobody else. For HR this is the
+        signal worth chasing — a team that's either siloed or has no cross-functional work.</p></div>
+      <div><b>5</b><p><em>A connector.</em> Leah's edges reach five teams. Dashed ring marks the highest
+        betweenness score — the people holding the org together socially, who rarely show up in any other
+        report.</p></div>
+      <div><b>6</b><p><em>Plain-language read-out.</em> The graph is suggestive; this panel states what it
+        implies in sentences, so an HR user doesn't have to interpret a hairball.</p></div>
+      <div><b>7</b><p><em>Every node is a door.</em> Clicking a person opens them in Relationships (1.5);
+        clicking an edge opens that pair's exchanges. The map identifies who to look at — the next tab is
+        where you look.</p></div>
+    </div>
+
+    <div class="note warn">
+      <strong>WORTH DECIDING BEFORE BUILD — VISIBILITY</strong><br>
+      This map makes individual giving and receiving behaviour legible to HR, including who has no connections
+      at all. That is genuinely useful and also genuinely sensitive — in some jurisdictions it is employee
+      relationship data subject to consultation. Recommend: admin-only, aggregate view for managers, and a
+      documented retention window.
+    </div>
+  </section>
+</div>
+<div class="doc-wrap">
+  <section class="sec">
+    <div class="sec-h"><span class="num">1.5</span><h3>Relationships <span style="font-size:14px; color:var(--muted); font-weight:500">— third tab</span></h3></div>
+    <p class="sec-sub">The Network Map answers <em>how does this company work</em>. It cannot answer <em>what is
+      going on between these two people</em> — for that you need the messages, and a hairball has no room for
+      them. Relationships is the same data at single-person resolution: search anyone, read every kudo they have
+      sent and received, and see their reporting line with each link weighted by how much recognition actually
+      flows along it.</p>
+
+    <div class="frame">
+      <div class="frame-cap"><span class="dots"><i></i><i></i><i></i></span> Kudos Gift Tracker → Relationships · searching</div>
+      <div class="scroller"><div class="mock">
+        <div class="shell">
+          <div class="side">
+            <div class="logo"><i>🎁</i><div><b>SodaGift</b><span>for Biz</span></div></div>
+            <hr>
+            <div class="wallet"><b>Lumen Labs</b><span>47 employees · FY2026</span></div>
+            <div class="nav-i"><em>▤</em> Create order</div>
+            <div class="nav-i"><em>▦</em> Order history</div>
+            <div class="nav-i on"><em>♡</em> Kudos Gift Tracker</div>
+            <div class="nav-i"><em>◔</em> Funding</div>
+            <div class="nav-i"><em>⚙</em> Setting</div>
+            <div class="nav-i"><em>▷</em> API Docs</div>
+          </div>
+          <div class="main">
+            <div class="top"><h2>Kudos Gift Tracker</h2>
+              <div class="sp"><span class="btn">FY2026 ▾</span><span class="btn">Export ⤓</span></div></div>
+            <div class="tabs" style="position:relative">
+              <div class="tab">Dashboard</div><div class="tab">Network Map</div><div class="tab on">Relationships</div>
+              <span class="mark" style="top:2px; left:350px">1</span>
+            </div>
+            <div class="body" style="padding:22px 26px 26px">
+
+              <div style="display:flex; gap:16px; align-items:flex-start">
+
+                <div style="flex:0 0 340px; position:relative">
+                  <span class="mark" style="top:-11px; left:-10px">2</span>
+                  <div style="border:1px solid #5B21B6; border-radius:8px 8px 0 0; background:#fff; padding:10px 12px; display:flex; align-items:center; gap:9px; font-size:13px; box-shadow:0 0 0 3px #F0E8FE">
+                    <span class="muted">🔍</span> wei<span style="color:#5B21B6">|</span>
+                    <span class="muted" style="margin-left:auto; font-size:11px">esc</span>
+                  </div>
+                  <div style="border:1px solid #D9D5E4; border-top:0; border-radius:0 0 8px 8px; background:#fff; padding:9px 0 7px">
+                    <div style="font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:#8A8F9C; font-weight:600; padding:0 12px 7px">1 match</div>
+                    <div style="display:flex; align-items:center; gap:10px; padding:9px 12px; background:#F3EDFD; border-left:3px solid #5B21B6">
+                      <span class="av" style="background:#7C3AED">WC</span>
+                      <div style="font-size:12.5px"><b>Wei Chen</b><div class="muted" style="font-size:10.5px">Senior Engineer · Engineering</div></div>
+                      <span style="margin-left:auto; font-size:10.5px; color:#5B21B6; font-weight:600">↵</span>
+                    </div>
+                    <div style="font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:#8A8F9C; font-weight:600; padding:12px 12px 7px; border-top:1px solid #F2F0F7; margin-top:7px">Recently viewed</div>
+                    <div style="display:flex; align-items:center; gap:10px; padding:7px 12px">
+                      <span class="av" style="background:#2563EB">KM</span>
+                      <div style="font-size:12.5px"><b>Kofi Mensah</b><div class="muted" style="font-size:10.5px">Sales Manager · Sales</div></div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px; padding:7px 12px">
+                      <span class="av" style="background:#9CA3AF">JK</span>
+                      <div style="font-size:12.5px"><b>Jonas Kerr</b><div class="muted" style="font-size:10.5px">Engineer · Engineering</div></div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px; padding:7px 12px">
+                      <span class="av" style="background:#64748B">GL</span>
+                      <div style="font-size:12.5px"><b>Grete Lindqvist</b><div class="muted" style="font-size:10.5px">Accountant · Finance</div></div>
+                    </div>
+                  </div>
+                  <div class="muted" style="font-size:11px; margin-top:9px; line-height:1.5">Matches on name, title or
+                    team. <b style="color:#33303D">⌘K</b> opens it from anywhere in the tracker.</div>
+                </div>
+
+                <div class="card" style="flex:1; position:relative">
+                  <span class="mark" style="top:-10px; left:-10px">3</span>
+                  <div class="card-h">
+                    <h3>Everyone</h3><span class="sub">47 people · sorted by fewest connections first</span>
+                    <span class="sp">
+                      <span class="btn sm">All teams ▾</span>
+                      <span class="btn sm" style="border-color:#5B21B6; color:#5B21B6; background:#F6F1FE">Flagged only ☑</span>
+                    </span>
+                  </div>
+                  <table class="tbl">
+                    <thead><tr>
+                      <th>Person</th><th>Reports to</th><th class="num">Received</th><th class="num">Given</th>
+                      <th class="num">Connections</th><th>Flag</th><th class="num">Last exchange</th><th style="width:60px"></th>
+                    </tr></thead>
+                    <tbody>
+                      <tr style="background:#FFFCFC">
+                        <td><div class="who-cell"><span class="av" style="background:#9CA3AF">JK</span><div><b>Jonas Kerr</b><span>Engineer · Engineering</span></div></div></td>
+                        <td class="muted">Marcus Bell</td>
+                        <td class="num">$25</td><td class="num">$0</td><td class="num">1</td>
+                        <td><span class="pill crit">Single source</span></td>
+                        <td class="num muted">Never given</td>
+                        <td><span class="btn gh sm">Open →</span></td>
+                      </tr>
+                      <tr style="background:#FFFCFC">
+                        <td><div class="who-cell"><span class="av" style="background:#64748B">SO</span><div><b>Sam Okafor</b><span>Analyst · Finance</span></div></div></td>
+                        <td class="muted">Mira Costa</td>
+                        <td class="num">$10</td><td class="num">$0</td><td class="num">1</td>
+                        <td><span class="pill crit">Unreached 90d</span></td>
+                        <td class="num muted">Feb 20</td>
+                        <td><span class="btn gh sm">Open →</span></td>
+                      </tr>
+                      <tr>
+                        <td><div class="who-cell"><span class="av" style="background:#64748B">GL</span><div><b>Grete Lindqvist</b><span>Accountant · Finance</span></div></div></td>
+                        <td class="muted">Mira Costa</td>
+                        <td class="num">$20</td><td class="num">$15</td><td class="num">2</td>
+                        <td><span class="pill warn">Team-only</span></td>
+                        <td class="num muted">Mar 04</td>
+                        <td><span class="btn gh sm">Open →</span></td>
+                      </tr>
+                      <tr>
+                        <td><div class="who-cell"><span class="av" style="background:#2563EB">HJ</span><div><b>Hal Jennings</b><span>Sales Dev Rep · Sales</span></div></div></td>
+                        <td class="muted">Kofi Mensah</td>
+                        <td class="num">$30</td><td class="num">$20</td><td class="num">3</td>
+                        <td><span class="pill warn">Team-only</span></td>
+                        <td class="num muted">Jul 18</td>
+                        <td><span class="btn gh sm">Open →</span></td>
+                      </tr>
+                      <tr>
+                        <td><div class="who-cell"><span class="av" style="background:#7C3AED">RM</span><div><b>Ravi Menon</b><span>Engineer · Engineering</span></div></div></td>
+                        <td class="muted">Marcus Bell</td>
+                        <td class="num">$30</td><td class="num">$20</td><td class="num">4</td>
+                        <td><span class="pill warn">No manager kudos</span></td>
+                        <td class="num muted">Jun 30</td>
+                        <td><span class="btn gh sm">Open →</span></td>
+                      </tr>
+                      <tr>
+                        <td><div class="who-cell"><span class="av" style="background:#DB6D0B">YT</span><div><b>Yuki Tanaka</b><span>Marketing Specialist · Marketing</span></div></div></td>
+                        <td class="muted">Ana Duarte</td>
+                        <td class="num">$45</td><td class="num">$55</td><td class="num">6</td>
+                        <td><span class="muted">—</span></td>
+                        <td class="num muted">Aug 12</td>
+                        <td><span class="btn gh sm">Open →</span></td>
+                      </tr>
+                      <tr style="background:#F7F2FE; position:relative">
+                        <td><div class="who-cell"><span class="av" style="background:#7C3AED">WC</span><div><b>Wei Chen</b><span>Senior Engineer · Engineering</span></div></div></td>
+                        <td class="muted">Marcus Bell</td>
+                        <td class="num" style="font-weight:600">$110</td><td class="num">$50</td><td class="num">11</td>
+                        <td><span class="pill warn">No manager kudos</span></td>
+                        <td class="num muted">Aug 27</td>
+                        <td><span class="btn sm" style="border-color:#5B21B6; color:#5B21B6; background:#fff; font-weight:600">Open →</span></td>
+                      </tr>
+                      <tr>
+                        <td><div class="who-cell"><span class="av" style="background:#7C3AED">PR</span><div><b>Priya Raman</b><span>Staff Engineer · Engineering</span></div></div></td>
+                        <td class="muted">Marcus Bell</td>
+                        <td class="num" style="font-weight:600">$145</td><td class="num">$80</td><td class="num">14</td>
+                        <td><span class="pill crit">Overload risk</span></td>
+                        <td class="num muted">Aug 26</td>
+                        <td><span class="btn gh sm">Open →</span></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <div style="padding:11px 16px; border-top:1px solid #EFEDF4; display:flex; align-items:center; position:relative">
+                    <span class="muted" style="font-size:11.5px">Showing 8 of 21 flagged · 47 people in total</span>
+                    <span class="mark" style="top:-10px; left:302px">4</span>
+                    <span class="btn gh sm" style="margin-left:auto">Show everyone →</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="legend">
+      <div><b>1</b><p><em>Third tab</em>, alongside Dashboard and Network Map. It is a peer of the map rather
+        than a child of it, because HR reaches a person by searching far more often than by hunting for their
+        dot on a graph.</p></div>
+      <div><b>2</b><p><em>Search is the front door.</em> Type a name, a title or a team; ⌘K opens it from any
+        tracker screen. Recently viewed sits underneath because HR reviewing a cohort returns to the same four
+        or five people repeatedly.</p></div>
+      <div><b>3</b><p><em>The directory, ranked by connection count</em> rather than alphabetically — a
+        list sorted A–Z would bury exactly the people this page exists to find. <em>Connections</em> is the
+        number of distinct colleagues exchanged with, in either direction.</p></div>
+      <div><b>4</b><p><em>Flags reuse the Network Map's existing analysis</em> — single-source, unreached,
+        team-only, no manager kudos, overload risk — turned from a sidebar sentence into a filterable column.
+        No new metric is invented here.</p></div>
+    </div>
+
+    <div class="frame">
+      <div class="frame-cap"><span class="dots"><i></i><i></i><i></i></span> Kudos Gift Tracker → Relationships → Wei Chen</div>
+      <div class="scroller"><div class="mock">
+        <div class="shell">
+          <div class="side">
+            <div class="logo"><i>🎁</i><div><b>SodaGift</b><span>for Biz</span></div></div>
+            <hr>
+            <div class="wallet"><b>Lumen Labs</b><span>47 employees · FY2026</span></div>
+            <div class="nav-i"><em>▤</em> Create order</div>
+            <div class="nav-i"><em>▦</em> Order history</div>
+            <div class="nav-i on"><em>♡</em> Kudos Gift Tracker</div>
+            <div class="nav-i"><em>◔</em> Funding</div>
+            <div class="nav-i"><em>⚙</em> Setting</div>
+            <div class="nav-i"><em>▷</em> API Docs</div>
+          </div>
+          <div class="main">
+            <div class="top" style="position:relative">
+              <span class="av" style="background:#7C3AED; width:38px; height:38px; font-size:13px">WC</span>
+              <div>
+                <div style="font-size:11.5px; color:#8A8F9C; margin-bottom:3px">
+                  <span style="color:#5B21B6; font-weight:600">‹ All people</span>
+                  &nbsp;›&nbsp; <span class="muted">Wei Chen</span></div>
+                <h2 style="font-size:21px">Wei Chen <span class="muted" style="font-size:13px; font-weight:400">· Senior Engineer, Engineering · reports to Marcus Bell</span></h2>
+              </div>
+              <div class="sp">
+                <span class="btn" style="color:#8A8F9C; min-width:172px">🔍 Search people
+                  <b style="margin-left:auto; font-size:10px; border:1px solid #D9D5E4; border-radius:4px; padding:1px 4px; color:#8A8F9C">⌘K</b></span>
+                <span class="btn">FY2026 ▾</span><span class="btn nudge">◈ Nudge</span></div>
+              <span class="mark" style="top:24px; left:-2px">1</span>
+              <span class="mark" style="top:26px; right:196px">7</span>
+            </div>
+            <div class="tabs"><div class="tab">Dashboard</div><div class="tab">Network Map</div><div class="tab on">Relationships</div></div>
+            <div class="body" style="padding:20px 26px 26px">
+
+              <div class="grid" style="grid-template-columns:repeat(4,1fr)">
+                <div class="kpi"><div class="lab">Received</div><div class="big">$110</div><div class="sub">9 kudos from 7 colleagues</div></div>
+                <div class="kpi"><div class="lab">Given</div><div class="big">$50</div><div class="sub">4 kudos to 4 colleagues · 63% of budget</div></div>
+                <div class="kpi"><div class="lab">Connections</div><div class="big">11</div><div class="sub">across 4 teams · 3 are mutual</div></div>
+                <div class="kpi" style="border-color:#E4C9F0; background:#FDFBFF">
+                  <div class="lab" style="color:#5B21B6">Unclaimed</div><div class="big" style="color:#5B21B6">$25</div>
+                  <div class="sub">1 card · expires Sep 14</div></div>
+              </div>
+
+              <div style="display:flex; gap:16px; margin-top:18px; align-items:stretch">
+
+                <div style="flex:0 0 386px; display:flex; flex-direction:column; gap:14px">
+                  <div class="card" style="position:relative; padding:0; overflow:hidden">
+                    <span class="mark" style="top:-10px; left:-10px">2</span>
+                    <div class="card-h"><h3>Reporting line</h3><span class="sub">link weight = kudos exchanged</span></div>
+                    <svg viewBox="0 0 386 352" style="display:block; width:100%; height:auto" role="img" aria-label="Wei Chen at the centre, his manager Marcus Bell above connected by a dashed grey line meaning no kudos exchanged, and eight colleagues around him connected by lines whose thickness and colour show how much recognition passes between them">
+                      <g stroke-linecap="round" fill="none">
+                        <line x1="193" y1="156" x2="193" y2="46" stroke="#C9C4D6" stroke-width="2" stroke-dasharray="5 5"/>
+                        <line x1="193" y1="156" x2="86" y2="252" stroke="#5B21B6" stroke-width="4.2" opacity=".85"/>
+                        <line x1="193" y1="156" x2="163" y2="284" stroke="#8B5CF6" stroke-width="2.9" opacity=".85"/>
+                        <line x1="193" y1="156" x2="246" y2="276" stroke="#C4A9F0" stroke-width="1.8"/>
+                        <line x1="193" y1="156" x2="311" y2="244" stroke="#C4A9F0" stroke-width="1.8"/>
+                        <line x1="193" y1="156" x2="60" y2="126" stroke="#8B5CF6" stroke-width="2.9" opacity=".85"/>
+                        <line x1="193" y1="156" x2="329" y2="132" stroke="#C4A9F0" stroke-width="1.8"/>
+                        <line x1="193" y1="156" x2="44" y2="200" stroke="#C4A9F0" stroke-width="1.8"/>
+                      </g>
+                      <g font-family="IBM Plex Sans, sans-serif" font-size="9" fill="#5A5F6E" text-anchor="middle">
+                        <circle cx="193" cy="46" r="17" fill="#7C3AED" opacity=".9"/>
+                        <text x="193" y="50" font-size="9" font-weight="700" fill="#fff">MB</text>
+                        <text x="193" y="80" font-size="9.5" font-weight="600" fill="#2F2540">Marcus Bell</text>
+                        <text x="193" y="93" fill="#8A8F9C">manager</text>
+
+                        <circle cx="86" cy="252" r="17" fill="#7C3AED"/><text x="86" y="256" font-size="9" font-weight="700" fill="#fff">PR</text>
+                        <text x="86" y="285" font-size="9.5" font-weight="600" fill="#2F2540">Priya</text>
+                        <text x="86" y="297" fill="#8A8F9C">$40 · both ways</text>
+
+                        <circle cx="163" cy="284" r="13" fill="#7C3AED" opacity=".88"/><text x="163" y="288" font-size="8" font-weight="700" fill="#fff">DW</text>
+                        <text x="163" y="311" font-size="9.5" font-weight="600" fill="#2F2540">Dana</text>
+                        <text x="163" y="323" fill="#8A8F9C">$30 · both ways</text>
+
+                        <circle cx="246" cy="276" r="10" fill="#7C3AED" opacity=".8"/><text x="246" y="295" fill="#5A5F6E">Tomás</text>
+                        <text x="246" y="306" fill="#8A8F9C">$5</text>
+
+                        <circle cx="311" cy="244" r="10" fill="#7C3AED" opacity=".8"/><text x="311" y="263" fill="#5A5F6E">Aisha</text>
+                        <text x="311" y="274" fill="#8A8F9C">$10 · given</text>
+
+                        <circle cx="60" cy="126" r="15" fill="#0D9488"/><text x="60" y="130" font-size="8.5" font-weight="700" fill="#fff">SM</text>
+                        <text x="60" y="153" font-size="9.5" font-weight="600" fill="#2F2540">Sofia</text>
+                        <text x="60" y="165" fill="#8A8F9C">$25 · received</text>
+
+                        <circle cx="329" cy="132" r="13" fill="#059669"/><text x="329" y="136" font-size="8" font-weight="700" fill="#fff">LO</text>
+                        <text x="329" y="159" font-size="9.5" font-weight="600" fill="#2F2540">Leah</text>
+                        <text x="329" y="171" fill="#8A8F9C">$15 · received</text>
+
+                        <circle cx="44" cy="200" r="10" fill="#DB6D0B" opacity=".85"/><text x="44" y="219" fill="#5A5F6E">Ana</text>
+                        <text x="44" y="230" fill="#8A8F9C">$10 · received</text>
+                      </g>
+                      <g>
+                        <rect x="139" y="134" width="108" height="44" rx="11" fill="#5B21B6"/>
+                        <circle cx="161" cy="156" r="13" fill="#fff" opacity=".22"/>
+                        <text x="161" y="160" font-family="IBM Plex Sans, sans-serif" font-size="9" font-weight="700" fill="#fff" text-anchor="middle">WC</text>
+                        <text x="180" y="153" font-family="IBM Plex Sans, sans-serif" font-size="11" font-weight="600" fill="#fff">Wei Chen</text>
+                        <text x="180" y="166" font-family="IBM Plex Sans, sans-serif" font-size="8.5" fill="#D8C7F7">Senior Engineer</text>
+                      </g>
+                      <g font-family="IBM Plex Sans, sans-serif" font-size="8.5" fill="#8A8F9C">
+                        <text x="14" y="346">Dashed grey = no kudos either way in 12 months</text>
+                      </g>
+                    </svg>
+                    <span class="mark" style="top:132px; left:203px">3</span>
+                  </div>
+
+                  <div class="card" style="padding:14px 16px; border-color:#F0C9C5; background:#FFFCFC; position:relative">
+                    <span class="mark" style="top:-10px; left:-10px">4</span>
+                    <div style="display:flex; align-items:flex-start; gap:10px">
+                      <span class="av" style="background:#7C3AED">MB</span>
+                      <div style="font-size:12px; line-height:1.5">
+                        <b style="font-size:12.5px">Marcus Bell has never recognised Wei</b>
+                        <div class="muted">Seven other colleagues have, four of them since June. This is the
+                          <em>manager gap</em> the Network Map counts — here it is one specific pair.</div>
+                      </div>
+                    </div>
+                    <div style="margin-top:11px"><span class="btn nudge sm">◈ Nudge Marcus Bell</span></div>
+                  </div>
+                </div>
+
+                <div class="card" style="flex:1; position:relative">
+                  <span class="mark" style="top:-10px; left:-10px">5</span>
+                  <span class="mark" style="top:300px; left:-11px">6</span>
+                  <div class="card-h">
+                    <h3>Every exchange</h3><span class="sub">13 kudos · newest first</span>
+                    <span class="sp">
+                      <span class="btn sm">Both directions ▾</span>
+                      <span class="btn sm">With: anyone ▾</span>
+                      <span class="btn sm">Export ⤓</span>
+                    </span>
+                  </div>
+                  <table class="tbl">
+                    <thead><tr>
+                      <th style="width:28px"></th><th>Colleague</th><th>Message</th>
+                      <th class="num">Value</th><th>Status</th><th class="num">Date</th>
+                    </tr></thead>
+                    <tbody>
+                      <tr style="background:#FDFBFF">
+                        <td style="color:#0F7A55; font-weight:700; font-size:15px">←</td>
+                        <td><div class="who-cell"><span class="av" style="background:#0D9488">SM</span><div><b>Sofia Marchetti</b><span>Design</span></div></div></td>
+                        <td class="muted" style="max-width:250px">"The migration doc saved my week."</td>
+                        <td class="num" style="font-weight:600; color:#0F7A55">+$25</td>
+                        <td><span class="pill vio">Expires Sep 14</span></td>
+                        <td class="num muted">Aug 27</td>
+                      </tr>
+                      <tr>
+                        <td style="color:#8A8F9C; font-weight:700; font-size:15px">→</td>
+                        <td><div class="who-cell"><span class="av" style="background:#7C3AED">AN</span><div><b>Aisha Nkemdi</b><span>Engineering</span></div></div></td>
+                        <td class="muted" style="max-width:250px">"Your review caught a real problem — thank you."</td>
+                        <td class="num">−$10</td>
+                        <td><span class="pill good">Claimed</span></td>
+                        <td class="num muted">Aug 24</td>
+                      </tr>
+                      <tr>
+                        <td style="color:#0F7A55; font-weight:700; font-size:15px">←</td>
+                        <td><div class="who-cell"><span class="av" style="background:#059669">LO</span><div><b>Leah Osborne</b><span>People Ops</span></div></div></td>
+                        <td class="muted" style="max-width:250px">"Thanks for covering the onboarding session."</td>
+                        <td class="num" style="color:#0F7A55">+$15</td>
+                        <td><span class="pill good">Claimed</span></td>
+                        <td class="num muted">Aug 14</td>
+                      </tr>
+                      <tr style="background:#FCFAFF">
+                        <td style="color:#8A8F9C; font-weight:700; font-size:15px">→</td>
+                        <td><div class="who-cell"><span class="av" style="background:#7C3AED">PR</span><div><b>Priya Raman</b><span>Engineering</span></div></div></td>
+                        <td class="muted" style="max-width:250px">"Thanks for jumping on the deploy issue on Friday night."</td>
+                        <td class="num">−$20</td>
+                        <td><span class="pill good">Claimed</span></td>
+                        <td class="num muted">Aug 08</td>
+                      </tr>
+                      <tr style="background:#FCFAFF">
+                        <td style="color:#0F7A55; font-weight:700; font-size:15px">←</td>
+                        <td><div class="who-cell"><span class="av" style="background:#7C3AED">PR</span><div><b>Priya Raman</b><span>Engineering</span></div></div></td>
+                        <td class="muted" style="max-width:250px">"Great catch on the auth bug."</td>
+                        <td class="num" style="color:#0F7A55">+$20</td>
+                        <td><span class="pill good">Claimed</span></td>
+                        <td class="num muted">Jul 30</td>
+                      </tr>
+                      <tr>
+                        <td style="color:#0F7A55; font-weight:700; font-size:15px">←</td>
+                        <td><div class="who-cell"><span class="av" style="background:#DB6D0B">AD</span><div><b>Ana Duarte</b><span>Marketing</span></div></div></td>
+                        <td class="muted" style="max-width:250px">"Launch day would've fallen over without you."</td>
+                        <td class="num" style="color:#0F7A55">+$10</td>
+                        <td><span class="pill good">Claimed</span></td>
+                        <td class="num muted">Jul 11</td>
+                      </tr>
+                      <tr>
+                        <td style="color:#8A8F9C; font-weight:700; font-size:15px">→</td>
+                        <td><div class="who-cell"><span class="av" style="background:#7C3AED">DW</span><div><b>Dana Whitfield</b><span>Engineering</span></div></div></td>
+                        <td class="muted" style="max-width:250px">"You unblocked me twice this sprint."</td>
+                        <td class="num">−$15</td>
+                        <td><span class="pill good">Claimed</span></td>
+                        <td class="num muted">Jun 24</td>
+                      </tr>
+                      <tr>
+                        <td style="color:#0F7A55; font-weight:700; font-size:15px">←</td>
+                        <td><div class="who-cell"><span class="av" style="background:#7C3AED">DW</span><div><b>Dana Whitfield</b><span>Engineering</span></div></div></td>
+                        <td class="muted" style="max-width:250px">"Pairing on the parser was genuinely fun."</td>
+                        <td class="num" style="color:#0F7A55">+$15</td>
+                        <td><span class="pill good">Claimed</span></td>
+                        <td class="num muted">Jun 22</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <div style="padding:11px 16px; border-top:1px solid #EFEDF4; display:flex; align-items:center">
+                    <span class="muted" style="font-size:11.5px">Showing 8 of 13 · $110 in, $50 out</span>
+                    <span class="btn gh sm" style="margin-left:auto">Show all →</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="legend">
+      <div><b>1</b><p><em>Reached three ways</em> — a search result, a directory row, or a click on that person's
+        node in the Network Map. Same destination each time, so the map finally has somewhere to click through
+        to. <em>‹ All people</em> returns to 1.5a with the search text, team filter and sort still applied —
+        HR working through a flagged cohort should not have to rebuild the list after every person.</p></div>
+      <div><b>2</b><p><em>Reporting line, not an org chart.</em> Lumen Labs' hierarchy is one level deep — a
+        team lead and their reports — so drawing a tree would draw a starburst. This shows the unit that
+        actually exists: manager above, the colleagues this person exchanges with around them.</p></div>
+      <div><b>3</b><p><em>The dashed grey line is the finding.</em> Every other link is weighted by the combined
+        two-way value of kudos on it; Wei's manager link has no weight at all, which is legible in a glance in
+        a way a table row never is.</p></div>
+      <div><b>4</b><p><em>The read-out, then the action.</em> The Network Map states "9 people have a manager
+        gap"; this names the manager and offers the nudge, so the insight ends in a message rather than a
+        note-to-self.</p></div>
+      <div><b>5</b><p><em>The trail — the reason this page exists.</em> Every kudo in and out, in one
+        chronology, with the message as a full column rather than a tooltip. <em>With: anyone</em> narrows to a
+        single pair, which is the state you land in after clicking an edge on the map.</p></div>
+      <div><b>6</b><p><em>A mutual pair, shaded together.</em> Wei and Priya thanked each other three weeks
+        apart. Reciprocity is the difference between a working relationship and a one-way dependency, so the
+        rows are grouped visually rather than left for the reader to spot.</p></div>
+      <div><b>7</b><p><em>Search never goes away.</em> The point of this tab is moving between people, so the
+        search field sits in the header of the person page too — ⌘K, type, enter, and you are on the next
+        person without a round trip through the directory. Going "back" to search is a step this page
+        removes rather than a step it asks for.</p></div>
+    </div>
+
+    <div class="note warn">
+      <strong>WORTH DECIDING BEFORE BUILD — WHO READS THE MESSAGES</strong><br>
+      Every other HR screen in this document shows amounts and counts. This one shows what people wrote to each
+      other, which is a different kind of data — and people write differently once they know HR reads it.
+      Three defensible positions: messages visible to admins (as drawn); messages redacted to HR with amounts
+      and dates intact; or messages visible only inside the pair, with this page showing the exchange without
+      its content. Recommend the middle option by default and the full view behind an explicit,
+      audit-logged setting.
+    </div>
+
+    <div class="note">
+      <strong>NOTHING NEW IS COLLECTED</strong><br>
+      Both screens are built entirely from data the tracker already holds — sender, recipient, amount, message,
+      dates, claim status, and the existing manager field. Relationships is a new view of the same records, not
+      a new record.
+    </div>
+  </section>
+</div>
+
+<div class="band" id="part2">
+  <div class="band-in">
+    <div class="eyebrow">Part 2 of 2 · Different persona, different page, different permissions</div>
+    <h2>Employee Experience</h2>
+    <p>Everything above this line is HR-only. What follows is a separate top-level page called <strong>My
+      Kudos</strong>, seen by every employee in the company. Nobody here can see another person's budget,
+      the leaderboard, the claim report, or the network map — this persona only ever sees their own numbers.</p>
+    <span class="who">👤 Persona — Wei Chen, Senior Engineer · standard employee, no admin rights</span>
+  </div>
+</div>
+
+<div class="doc-wrap">
+  <section class="sec">
+    <div class="sec-h"><span class="num">2.1</span><h3>My Kudos — Overview</h3></div>
+    <p class="sec-sub">The landing tab. Answers the three questions an employee actually has: how much do I have
+      left to give, what have I been given, and is anything waiting for me to claim.</p>
+
+    <div class="frame">
+      <div class="frame-cap"><span class="dots"><i></i><i></i><i></i></span> My Kudos → Overview</div>
+      <div class="scroller"><div class="mock">
+        <div class="shell">
+          <div class="side">
+            <div class="logo"><i>🎁</i><div><b>SodaGift</b><span>for Biz</span></div></div>
+            <hr>
+            <div class="wallet" style="position:relative">
+              <b>Wei Chen</b><span>Engineering</span>
+              <div style="margin-top:9px; padding-top:9px; border-top:1px solid rgba(255,255,255,.2)">
+                <div style="font-size:20px; font-weight:700" class="tnum">$30 <span style="font-size:11px; font-weight:400; opacity:.75">left to give</span></div>
+                <div class="bar" style="margin-top:7px; background:rgba(255,255,255,.22)"><i style="width:63%; background:#C9A8FF"></i></div>
+                <div style="font-size:10.5px; opacity:.72; margin-top:5px">$50 of $80 used · resets Dec 31</div>
+              </div>
+              <span class="mark" style="top:-10px; left:-10px">1</span>
+            </div>
+            <div class="nav-i on new"><em>♡</em> My Kudos</div>
+            <div class="nav-i" style="opacity:.35"><em>▦</em> Order history</div>
+            <div class="nav-i" style="opacity:.35"><em>⚙</em> Setting</div>
+          </div>
+          <div class="main">
+            <div class="top"><h2>My Kudos</h2>
+              <div class="sp"><span class="btn pri">＋ Send Kudos</span></div></div>
+            <div class="tabs" style="position:relative">
+              <div class="tab on">Overview</div><div class="tab">Send Kudos</div>
+              <div class="tab">My Preferences</div><div class="tab">Received</div>
+              <span class="mark" style="top:2px; left:112px">2</span>
+            </div>
+            <div class="body">
+              <div class="grid" style="grid-template-columns:repeat(3,1fr); position:relative">
+                <span class="mark" style="top:-10px; left:-10px">3</span>
+                <div class="kpi">
+                  <div class="lab">Left to give</div>
+                  <div class="big">$30</div>
+                  <div class="sub">of your $80 for 2026</div>
+                  <div class="bar" style="margin-top:11px"><i style="width:63%"></i></div>
+                  <div class="sub" style="margin-top:8px"><span class="pill warn">124 days until it resets</span></div>
+                </div>
+                <div class="kpi">
+                  <div class="lab">Received this year</div>
+                  <div class="big">$110</div>
+                  <div class="sub">9 kudos from 7 colleagues</div>
+                  <div style="margin-top:12px; display:flex; gap:-6px">
+                    <span class="av" style="background:#7C3AED; margin-right:-7px; box-shadow:0 0 0 2px #fff">PR</span>
+                    <span class="av" style="background:#0D9488; margin-right:-7px; box-shadow:0 0 0 2px #fff">SM</span>
+                    <span class="av" style="background:#059669; margin-right:-7px; box-shadow:0 0 0 2px #fff">LO</span>
+                    <span class="av" style="background:#DB6D0B; margin-right:-7px; box-shadow:0 0 0 2px #fff">AD</span>
+                    <span class="av" style="background:#E8E5EF; color:#63687A; box-shadow:0 0 0 2px #fff">+3</span>
+                  </div>
+                </div>
+                <div class="kpi" style="border-color:#E4C9F0; background:#FDFBFF">
+                  <div class="lab" style="color:#5B21B6">Waiting to be claimed</div>
+                  <div class="big" style="color:#5B21B6">$25</div>
+                  <div class="sub">1 gift card · expires Sep 14, 2026</div>
+                  <div style="margin-top:13px"><span class="btn pri sm">Claim now</span></div>
+                </div>
+              </div>
+
+              <div class="grid" style="grid-template-columns:1.3fr 1fr; margin-top:20px; align-items:start">
+                <div class="card">
+                  <div class="card-h"><h3>Recent activity</h3><span class="sp"><span class="btn gh sm">See all →</span></span></div>
+                  <table class="tbl"><tbody>
+                    <tr><td style="width:34px"><span class="av" style="background:#0D9488">SM</span></td>
+                      <td><b>Sofia Marchetti</b> thanked you<br><span class="muted" style="font-size:11.5px">"The migration doc saved my week."</span></td>
+                      <td class="num"><b>+$25</b><br><span class="pill vio">Unclaimed</span></td>
+                      <td class="num muted" style="font-size:11.5px">Aug 27</td></tr>
+                    <tr><td><span class="av" style="background:#7C3AED">WC</span></td>
+                      <td>You thanked <b>Aisha Nkemdi</b><br><span class="muted" style="font-size:11.5px">Costa UK Gift Card</span></td>
+                      <td class="num">−$10<br><span class="pill good">Claimed</span></td>
+                      <td class="num muted" style="font-size:11.5px">Aug 24</td></tr>
+                    <tr><td><span class="av" style="background:#059669">LO</span></td>
+                      <td><b>Leah Osborne</b> thanked you<br><span class="muted" style="font-size:11.5px">"Thanks for covering the onboarding session."</span></td>
+                      <td class="num"><b>+$15</b><br><span class="pill good">Claimed</span></td>
+                      <td class="num muted" style="font-size:11.5px">Aug 14</td></tr>
+                    <tr><td><span class="av" style="background:#7C3AED">WC</span></td>
+                      <td>You thanked <b>Priya Raman</b><br><span class="muted" style="font-size:11.5px">Amazon.co.uk Gift Card</span></td>
+                      <td class="num">−$20<br><span class="pill good">Claimed</span></td>
+                      <td class="num muted" style="font-size:11.5px">Aug 08</td></tr>
+                  </tbody></table>
+                </div>
+
+                <div class="card" style="position:relative">
+                  <span class="mark" style="top:-10px; left:-10px">4</span>
+                  <div class="card-h"><h3>Your gift preferences</h3></div>
+                  <div style="padding:16px 18px">
+                    <p class="muted" style="margin:0 0 13px; font-size:12px; line-height:1.5">Colleagues see these
+                      three first when they send you kudos.</p>
+                    <div style="display:flex; flex-direction:column; gap:9px">
+                      <div style="display:flex; align-items:center; gap:10px; border:1px solid #E7E4EE; border-radius:8px; padding:9px 11px">
+                        <b style="color:#5B21B6; width:12px">1</b>
+                        <span class="av" style="background:#232F3E; border-radius:5px">a</span>
+                        <div style="font-size:12px"><b>Amazon.co.uk</b><div class="muted" style="font-size:10.5px">£1–£1,000</div></div>
+                      </div>
+                      <div style="display:flex; align-items:center; gap:10px; border:1px solid #E7E4EE; border-radius:8px; padding:9px 11px">
+                        <b style="color:#5B21B6; width:12px">2</b>
+                        <span class="av" style="background:#6C1F3A; border-radius:5px">☕</span>
+                        <div style="font-size:12px"><b>Costa UK</b><div class="muted" style="font-size:10.5px">£1–£100</div></div>
+                      </div>
+                      <div style="display:flex; align-items:center; gap:10px; border:1px solid #E7E4EE; border-radius:8px; padding:9px 11px">
+                        <b style="color:#5B21B6; width:12px">3</b>
+                        <span class="av" style="background:#1F1F1F; border-radius:5px">🍎</span>
+                        <div style="font-size:12px"><b>Apple UK eGift</b><div class="muted" style="font-size:10.5px">£2–£500</div></div>
+                      </div>
+                    </div>
+                    <div style="margin-top:13px"><span class="btn sm" style="width:100%; justify-content:center">Edit preferences</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="legend">
+      <div><b>1</b><p><em>Budget lives in the sidebar</em>, in the slot the admin funding balance occupies today.
+        It's visible on every screen, so "how much do I have left" never requires navigation.</p></div>
+      <div><b>2</b><p><em>Four tabs</em>, same subpage pattern as the HR side. Overview, Send Kudos, My
+        Preferences, Received.</p></div>
+      <div><b>3</b><p><em>The three questions, answered in order.</em> The third tile is styled as an action
+        rather than a statistic — unclaimed money is the one thing on this page that expires.</p></div>
+      <div><b>4</b><p><em>Preferences shown to their owner.</em> Framed as what colleagues will see, so it's
+        obvious why filling it in is worth doing.</p></div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <div class="sec-h"><span class="num">2.2</span><h3>Send Kudos</h3></div>
+    <p class="sec-sub">Person first, then gift. Choosing a colleague reveals their top three preferences — the
+      centre of this whole flow — but never locks the sender into them. Amount and message complete it on the
+      same screen.</p>
+
+    <div class="frame">
+      <div class="frame-cap"><span class="dots"><i></i><i></i><i></i></span> My Kudos → Send Kudos · recipient selected</div>
+      <div class="scroller"><div class="mock">
+        <div class="shell">
+          <div class="side">
+            <div class="logo"><i>🎁</i><div><b>SodaGift</b><span>for Biz</span></div></div>
+            <hr>
+            <div class="wallet">
+              <b>Wei Chen</b><span>Engineering</span>
+              <div style="margin-top:9px; padding-top:9px; border-top:1px solid rgba(255,255,255,.2)">
+                <div style="font-size:20px; font-weight:700" class="tnum">$30 <span style="font-size:11px; font-weight:400; opacity:.75">left to give</span></div>
+                <div class="bar" style="margin-top:7px; background:rgba(255,255,255,.22)"><i style="width:63%; background:#C9A8FF"></i></div>
+              </div>
+            </div>
+            <div class="nav-i on"><em>♡</em> My Kudos</div>
+            <div class="nav-i" style="opacity:.35"><em>▦</em> Order history</div>
+            <div class="nav-i" style="opacity:.35"><em>⚙</em> Setting</div>
+          </div>
+          <div class="main">
+            <div class="top"><h2>My Kudos</h2></div>
+            <div class="tabs"><div class="tab">Overview</div><div class="tab on">Send Kudos</div>
+              <div class="tab">My Preferences</div><div class="tab">Received</div></div>
+            <div class="body">
+              <div style="display:flex; gap:18px; align-items:flex-start">
+
+                <div class="card" style="flex:0 0 290px; position:relative">
+                  <span class="mark" style="top:-10px; left:-10px">1</span>
+                  <div class="card-h"><h3>1 · Who are you thanking?</h3></div>
+                  <div style="padding:14px 16px">
+                    <div style="border:1px solid #D9D5E4; border-radius:7px; padding:8px 11px; font-size:12.5px; color:#8A8F9C; margin-bottom:14px">🔍 Search by name or team…</div>
+                    <div style="font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:#8A8F9C; font-weight:600; margin-bottom:9px">You worked with recently</div>
+                    <div style="display:flex; flex-direction:column; gap:5px">
+                      <div style="display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:7px; background:#F3EDFD; border:1px solid #5B21B6">
+                        <span class="av" style="background:#7C3AED">PR</span>
+                        <div style="font-size:12px"><b>Priya Raman</b><div class="muted" style="font-size:10.5px">Staff Engineer</div></div>
+                        <span style="margin-left:auto; color:#5B21B6; font-weight:700">✓</span>
+                      </div>
+                      <div style="display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:7px">
+                        <span class="av" style="background:#0D9488">SM</span>
+                        <div style="font-size:12px"><b>Sofia Marchetti</b><div class="muted" style="font-size:10.5px">Product Designer</div></div>
+                      </div>
+                      <div style="display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:7px">
+                        <span class="av" style="background:#7C3AED">DW</span>
+                        <div style="font-size:12px"><b>Dana Whitfield</b><div class="muted" style="font-size:10.5px">Senior Engineer</div></div>
+                      </div>
+                      <div style="display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:7px">
+                        <span class="av" style="background:#059669">LO</span>
+                        <div style="font-size:12px"><b>Leah Osborne</b><div class="muted" style="font-size:10.5px">People Ops Lead</div></div>
+                      </div>
+                      <div style="display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:7px">
+                        <span class="av" style="background:#7C3AED">TI</span>
+                        <div style="font-size:12px"><b>Tomás Iglesias</b><div class="muted" style="font-size:10.5px">Engineer</div></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="flex:1; display:flex; flex-direction:column; gap:16px">
+                  <div class="card" style="position:relative">
+                    <span class="mark" style="top:-10px; left:-10px">2</span>
+                    <div class="card-h" style="background:#FBF8FF">
+                      <span class="av" style="background:#7C3AED; width:32px; height:32px">PR</span>
+                      <div><h3>2 · Priya's top gift card picks</h3>
+                        <span class="sub">Chosen by Priya · she's most likely to actually use these</span></div>
+                    </div>
+                    <div class="grid" style="grid-template-columns:repeat(3,1fr); padding:16px 18px">
+                      <div style="border:2px solid #5B21B6; border-radius:9px; padding:13px; background:#FCFAFF; position:relative">
+                        <span class="pill vio" style="position:absolute; top:10px; right:10px">Her #1</span>
+                        <span class="av" style="background:#232F3E; border-radius:6px; width:38px; height:38px; font-size:16px">a</span>
+                        <div style="margin-top:10px; font-size:13px; font-weight:600">Amazon.co.uk Gift Card</div>
+                        <div class="muted" style="font-size:11px; margin-top:2px">£1–£1,000 · instant email</div>
+                        <div style="margin-top:11px"><span class="btn pri sm" style="width:100%; justify-content:center">Selected ✓</span></div>
+                      </div>
+                      <div style="border:1px solid #E7E4EE; border-radius:9px; padding:13px">
+                        
+                        <span class="av" style="background:#6C1F3A; border-radius:6px; width:38px; height:38px; font-size:16px">☕</span>
+                        <div style="margin-top:10px; font-size:13px; font-weight:600">Costa UK Gift Card</div>
+                        <div class="muted" style="font-size:11px; margin-top:2px">£1–£100 · instant email</div>
+                        <div style="margin-top:11px"><span class="btn sm" style="width:100%; justify-content:center">Choose</span></div>
+                      </div>
+                      <div style="border:1px solid #E7E4EE; border-radius:9px; padding:13px">
+                        <span class="av" style="background:#1F1F1F; border-radius:6px; width:38px; height:38px; font-size:16px">🍎</span>
+                        <div style="margin-top:10px; font-size:13px; font-weight:600">Apple UK eGift</div>
+                        <div class="muted" style="font-size:11px; margin-top:2px">£2–£500 · instant email</div>
+                        <div style="margin-top:11px"><span class="btn sm" style="width:100%; justify-content:center">Choose</span></div>
+                      </div>
+                    </div>
+                    <div style="padding:12px 18px; border-top:1px solid #EFEDF4; display:flex; align-items:center; gap:10px; position:relative">
+                      <span class="muted" style="font-size:12px">Something else in mind?</span>
+                      <span class="btn sm">Browse all 240 gift cards →</span>
+                      <span class="mark" style="top:-1px; left:330px">3</span>
+                    </div>
+                  </div>
+
+                  <div class="card" style="position:relative">
+                    <span class="mark" style="top:-10px; left:-10px">4</span>
+                    <div class="card-h"><h3>3 · Amount and message</h3></div>
+                    <div style="padding:16px 18px">
+                      <div style="display:flex; gap:9px; align-items:center">
+                        <span class="btn sm">$5</span><span class="btn sm">$10</span>
+                        <span class="btn sm" style="border-color:#5B21B6; background:#5B21B6; color:#fff; font-weight:600">$15</span>
+                        <span class="btn sm">$20</span><span class="btn sm">$25</span>
+                        <span class="btn sm">$30</span>
+                        <span class="btn sm" style="border-style:dashed">Custom…</span>
+                        <span class="muted" style="margin-left:auto; font-size:11.5px">Max $30 — your remaining budget</span>
+                      </div>
+                      <div style="border:1px solid #D9D5E4; border-radius:7px; padding:11px 13px; margin-top:14px; font-size:12.5px; line-height:1.5">
+                        Thanks for jumping on the deploy issue on Friday night — I'd still be debugging it.
+                        <span style="color:#C5C2CE">|</span>
+                      </div>
+                      <div class="muted" style="font-size:11px; margin-top:6px">Priya will see this with the gift. 92 characters left.</div>
+                    </div>
+                    <div style="padding:14px 18px; border-top:1px solid #EFEDF4; display:flex; align-items:center; gap:14px; background:#FCFBFE; position:relative">
+                      <span class="mark" style="top:-10px; left:-10px">5</span>
+                      <div style="font-size:12px"><span class="muted">After sending</span>
+                        <b class="tnum" style="font-size:14px; margin-left:7px">$30 → $15 left</b></div>
+                      <span class="btn" style="margin-left:auto">Cancel</span>
+                      <span class="btn pri">Send $15 to Priya →</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="legend">
+      <div><b>1</b><p><em>Person before gift.</em> Recent collaborators are listed first because the common case
+        is thanking someone you just worked with, not searching a directory of 47 names.</p></div>
+      <div><b>2</b><p><em>The recipient's top three, revealed on selection.</em> Labelled as <em>her</em> picks,
+        not a recommendation — the sender should understand this is Priya's stated preference, which is what
+        makes it worth following.</p></div>
+      <div><b>3</b><p><em>The escape hatch, always present.</em> Preferences are a shortcut, never a
+        restriction. Browsing opens the standard catalog grid from Create order.</p></div>
+      <div><b>4</b><p><em>Amount capped at remaining budget.</em> Denominations above $30 aren't offered rather
+        than offered-then-rejected, so there's no error state to recover from.</p></div>
+      <div><b>5</b><p><em>Balance preview before commit.</em> The sender sees exactly what this costs them
+        before the irreversible button.</p></div>
+    </div>
+
+    <div class="note">
+      <strong>EMPTY STATE</strong><br>
+      If the selected colleague hasn't set preferences, section 2 collapses to a single line — "Priya hasn't set
+      preferences yet" — with the catalog browser promoted in its place, plus an option to send a gentle prompt
+      asking them to fill theirs in.
+    </div>
+  </section>
+</div>
+
+<div class="doc-wrap">
+  <section class="sec">
+    <div class="sec-h"><span class="num">2.3</span><h3>My Preferences</h3></div>
+    <p class="sec-sub">Where an employee picks the three gift cards they'd most like to receive, in order. Short
+      by design — three ranked slots, filled from the same catalog the rest of the product uses.</p>
+
+    <div class="frame">
+      <div class="frame-cap"><span class="dots"><i></i><i></i><i></i></span> My Kudos → My Preferences</div>
+      <div class="scroller"><div class="mock">
+        <div class="shell">
+          <div class="side">
+            <div class="logo"><i>🎁</i><div><b>SodaGift</b><span>for Biz</span></div></div>
+            <hr>
+            <div class="wallet"><b>Wei Chen</b><span>Engineering</span>
+              <div style="margin-top:9px; padding-top:9px; border-top:1px solid rgba(255,255,255,.2)">
+                <div style="font-size:20px; font-weight:700" class="tnum">$30 <span style="font-size:11px; font-weight:400; opacity:.75">left to give</span></div>
+              </div></div>
+            <div class="nav-i on"><em>♡</em> My Kudos</div>
+            <div class="nav-i" style="opacity:.35"><em>▦</em> Order history</div>
+            <div class="nav-i" style="opacity:.35"><em>⚙</em> Setting</div>
+          </div>
+          <div class="main">
+            <div class="top"><h2>My Kudos</h2></div>
+            <div class="tabs"><div class="tab">Overview</div><div class="tab">Send Kudos</div>
+              <div class="tab on">My Preferences</div><div class="tab">Received</div></div>
+            <div class="body">
+              <div style="display:flex; gap:18px; align-items:flex-start">
+
+                <div class="card" style="flex:0 0 400px; position:relative">
+                  <span class="mark" style="top:-10px; left:-10px">1</span>
+                  <div class="card-h"><h3>Your top 3</h3><span class="sub">drag to reorder</span></div>
+                  <div style="padding:16px 18px; display:flex; flex-direction:column; gap:10px">
+                    <div style="display:flex; align-items:center; gap:11px; border:1px solid #E7E4EE; border-radius:9px; padding:12px 13px; background:#FCFAFF">
+                      <span class="muted" style="cursor:grab">⠿</span>
+                      <b style="color:#5B21B6; font-size:15px">1</b>
+                      <span class="av" style="background:#232F3E; border-radius:6px; width:36px; height:36px; font-size:15px">a</span>
+                      <div style="font-size:12.5px"><b>Amazon.co.uk Gift Card</b><div class="muted" style="font-size:11px">£1–£1,000 · United Kingdom</div></div>
+                      <span class="btn sm gh" style="margin-left:auto">Remove</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:11px; border:1px solid #E7E4EE; border-radius:9px; padding:12px 13px">
+                      <span class="muted" style="cursor:grab">⠿</span>
+                      <b style="color:#5B21B6; font-size:15px">2</b>
+                      <span class="av" style="background:#6C1F3A; border-radius:6px; width:36px; height:36px; font-size:15px">☕</span>
+                      <div style="font-size:12.5px"><b>Costa UK Gift Card</b><div class="muted" style="font-size:11px">£1–£100 · United Kingdom</div></div>
+                      <span class="btn sm gh" style="margin-left:auto">Remove</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:11px; border:1px solid #E7E4EE; border-radius:9px; padding:12px 13px">
+                      <span class="muted" style="cursor:grab">⠿</span>
+                      <b style="color:#5B21B6; font-size:15px">3</b>
+                      <span class="av" style="background:#1F1F1F; border-radius:6px; width:36px; height:36px; font-size:15px">🍎</span>
+                      <div style="font-size:12.5px"><b>Apple UK eGift</b><div class="muted" style="font-size:11px">£2–£500 · United Kingdom</div></div>
+                      <span class="btn sm gh" style="margin-left:auto">Remove</span>
+                    </div>
+                  </div>
+                  <div style="padding:14px 18px; border-top:1px solid #EFEDF4; background:#FCFBFE; position:relative">
+                    <span class="mark" style="top:-10px; left:-10px">2</span>
+                    <div style="font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:#8A8F9C; font-weight:600; margin-bottom:10px">What colleagues will see</div>
+                    <div style="border:1px solid #E7E4EE; border-radius:8px; padding:11px 13px; background:#fff; display:flex; align-items:center; gap:10px">
+                      <span class="av" style="background:#7C3AED">WC</span>
+                      <div style="font-size:12px"><b>Wei's top picks</b>
+                        <div class="muted" style="font-size:11px">Amazon.co.uk · Costa UK · Apple UK</div></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="card" style="flex:1; position:relative">
+                  <span class="mark" style="top:-10px; left:-10px">3</span>
+                  <div class="card-h"><h3>Add from catalog</h3>
+                    <span class="sp">
+                      <span class="btn sm">🌍 United Kingdom ▾</span>
+                      <span class="btn sm">🔍 Search…</span>
+                    </span>
+                  </div>
+                  <div class="grid" style="grid-template-columns:repeat(4,1fr); padding:16px 18px">
+                    <div style="border:1px solid #E7E4EE; border-radius:9px; padding:12px; opacity:.5">
+                      <span class="av" style="background:#232F3E; border-radius:6px; width:34px; height:34px; font-size:14px">a</span>
+                      <div style="margin-top:9px; font-size:12px; font-weight:600">Amazon.co.uk</div>
+                      <div class="muted" style="font-size:10.5px">Already #1</div>
+                    </div>
+                    <div style="border:1px solid #E7E4EE; border-radius:9px; padding:12px">
+                      <span class="av" style="background:#111; border-radius:6px; width:34px; height:34px; font-size:13px">adi</span>
+                      <div style="margin-top:9px; font-size:12px; font-weight:600">adidas UK</div>
+                      <div class="muted" style="font-size:10.5px">£1–£500</div>
+                    </div>
+                    <div style="border:1px solid #E7E4EE; border-radius:9px; padding:12px">
+                      <span class="av" style="background:#7B2D8E; border-radius:6px; width:34px; height:34px; font-size:13px">Ar</span>
+                      <div style="margin-top:9px; font-size:12px; font-weight:600">Argos</div>
+                      <div class="muted" style="font-size:10.5px">£1–£500</div>
+                    </div>
+                    <div style="border:1px solid #E7E4EE; border-radius:9px; padding:12px">
+                      <span class="av" style="background:#78BE20; border-radius:6px; width:34px; height:34px; font-size:13px">AS</span>
+                      <div style="margin-top:9px; font-size:12px; font-weight:600">ASDA</div>
+                      <div class="muted" style="font-size:10.5px">£1–£1,000</div>
+                    </div>
+                    <div style="border:1px solid #E7E4EE; border-radius:9px; padding:12px">
+                      <span class="av" style="background:#000; border-radius:6px; width:34px; height:34px; font-size:11px">asos</span>
+                      <div style="margin-top:9px; font-size:12px; font-weight:600">ASOS UK</div>
+                      <div class="muted" style="font-size:10.5px">£3–£250</div>
+                    </div>
+                    <div style="border:1px solid #E7E4EE; border-radius:9px; padding:12px">
+                      <span class="av" style="background:#05204A; border-radius:6px; width:34px; height:34px; font-size:13px">B</span>
+                      <div style="margin-top:9px; font-size:12px; font-weight:600">Boots UK</div>
+                      <div class="muted" style="font-size:10.5px">£1–£250</div>
+                    </div>
+                    <div style="border:1px solid #E7E4EE; border-radius:9px; padding:12px">
+                      <span class="av" style="background:#E31837; border-radius:6px; width:34px; height:34px; font-size:13px">★</span>
+                      <div style="margin-top:9px; font-size:12px; font-weight:600">Cineworld</div>
+                      <div class="muted" style="font-size:10.5px">£1–£300</div>
+                    </div>
+                    <div style="border:1px solid #E7E4EE; border-radius:9px; padding:12px">
+                      <span class="av" style="background:#00CCBC; border-radius:6px; width:34px; height:34px; font-size:13px">D</span>
+                      <div style="margin-top:9px; font-size:12px; font-weight:600">Deliveroo UK</div>
+                      <div class="muted" style="font-size:10.5px">£5–£20</div>
+                    </div>
+                  </div>
+                  <div style="padding:11px 18px; border-top:1px solid #EFEDF4"><span class="muted" style="font-size:11.5px">Showing 8 of 240 · same catalog as Create order</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="legend">
+      <div><b>1</b><p><em>Exactly three ranked slots.</em> Ranking matters because the send screen surfaces #1
+        most prominently. Drag to reorder; fewer than three is allowed, more is not.</p></div>
+      <div><b>2</b><p><em>Live preview of the public view.</em> Preferences are the only thing on this page
+        other people see, so the boundary is shown rather than described.</p></div>
+      <div><b>3</b><p><em>Reuses the existing catalog</em> — same products, same country filter, same cards as
+        Create order. Items already chosen are dimmed rather than hidden.</p></div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <div class="sec-h"><span class="num">2.4</span><h3>Received</h3></div>
+    <p class="sec-sub">Everything sent to this person, and whether they've actually redeemed it. This is the
+      employee-side mirror of the HR claim-tracking report — the same data, one person's slice of it.</p>
+
+    <div class="frame">
+      <div class="frame-cap"><span class="dots"><i></i><i></i><i></i></span> My Kudos → Received</div>
+      <div class="scroller"><div class="mock">
+        <div class="shell">
+          <div class="side">
+            <div class="logo"><i>🎁</i><div><b>SodaGift</b><span>for Biz</span></div></div>
+            <hr>
+            <div class="wallet"><b>Wei Chen</b><span>Engineering</span>
+              <div style="margin-top:9px; padding-top:9px; border-top:1px solid rgba(255,255,255,.2)">
+                <div style="font-size:20px; font-weight:700" class="tnum">$30 <span style="font-size:11px; font-weight:400; opacity:.75">left to give</span></div>
+              </div></div>
+            <div class="nav-i on"><em>♡</em> My Kudos</div>
+            <div class="nav-i" style="opacity:.35"><em>▦</em> Order history</div>
+            <div class="nav-i" style="opacity:.35"><em>⚙</em> Setting</div>
+          </div>
+          <div class="main">
+            <div class="top"><h2>My Kudos</h2></div>
+            <div class="tabs"><div class="tab">Overview</div><div class="tab">Send Kudos</div>
+              <div class="tab">My Preferences</div><div class="tab on">Received</div></div>
+            <div class="body">
+
+              <div class="grid" style="grid-template-columns:repeat(3,1fr); position:relative">
+                <span class="mark" style="top:-10px; left:-10px">1</span>
+                <div class="kpi"><div class="lab">Total received</div><div class="big">$110</div><div class="sub">9 kudos from 7 colleagues</div></div>
+                <div class="kpi"><div class="lab">Claimed</div><div class="big">$85</div>
+                  <div class="sub">8 of 9 gift cards redeemed</div>
+                  <div class="bar" style="margin-top:11px"><i class="good" style="width:77%"></i></div></div>
+                <div class="kpi" style="border-color:#E4C9F0; background:#FDFBFF">
+                  <div class="lab" style="color:#5B21B6">Not yet claimed</div><div class="big" style="color:#5B21B6">$25</div>
+                  <div class="sub">expires in 16 days</div>
+                  <div style="margin-top:11px"><span class="btn pri sm">Claim now</span></div></div>
+              </div>
+
+              <div class="card" style="margin-top:20px">
+                <div class="card-h"><h3>All kudos received</h3>
+                  <span class="sp"><span class="btn sm">FY2026 ▾</span><span class="btn sm">All statuses ▾</span></span></div>
+                <table class="tbl">
+                  <thead><tr><th>From</th><th>Gift card</th><th>Message</th><th class="num">Value</th><th>Status</th><th class="num">Received</th><th style="width:104px"></th></tr></thead>
+                  <tbody>
+                    <tr style="background:#FDFBFF; position:relative">
+                      <td><div class="who-cell"><span class="av" style="background:#0D9488">SM</span><div><b>Sofia Marchetti</b><span>Design</span></div></div></td>
+                      <td>Amazon.co.uk</td>
+                      <td class="muted" style="max-width:230px">"The migration doc saved my week."</td>
+                      <td class="num" style="font-weight:600">$25</td>
+                      <td><span class="pill vio">Expires Sep 14</span></td>
+                      <td class="num muted">Aug 27</td>
+                      <td><span class="btn pri sm">Claim</span></td>
+                    </tr>
+                    <tr>
+                      <td><div class="who-cell"><span class="av" style="background:#059669">LO</span><div><b>Leah Osborne</b><span>People Ops</span></div></div></td>
+                      <td>Costa UK</td>
+                      <td class="muted" style="max-width:230px">"Thanks for covering the onboarding session."</td>
+                      <td class="num">$15</td><td><span class="pill good">Claimed</span></td>
+                      <td class="num muted">Aug 14</td>
+                      <td><span class="btn gh sm">View code</span></td>
+                    </tr>
+                    <tr>
+                      <td><div class="who-cell"><span class="av" style="background:#7C3AED">PR</span><div><b>Priya Raman</b><span>Engineering</span></div></div></td>
+                      <td>Apple UK eGift</td>
+                      <td class="muted" style="max-width:230px">"Great catch on the auth bug."</td>
+                      <td class="num">$20</td><td><span class="pill good">Claimed</span></td>
+                      <td class="num muted">Jul 30</td>
+                      <td><span class="btn gh sm">View code</span></td>
+                    </tr>
+                    <tr>
+                      <td><div class="who-cell"><span class="av" style="background:#DB6D0B">AD</span><div><b>Ana Duarte</b><span>Marketing</span></div></div></td>
+                      <td>Deliveroo UK</td>
+                      <td class="muted" style="max-width:230px">"Launch day would've fallen over without you."</td>
+                      <td class="num">$10</td><td><span class="pill good">Claimed</span></td>
+                      <td class="num muted">Jul 11</td>
+                      <td><span class="btn gh sm">View code</span></td>
+                    </tr>
+                    <tr>
+                      <td><div class="who-cell"><span class="av" style="background:#7C3AED">DW</span><div><b>Dana Whitfield</b><span>Engineering</span></div></div></td>
+                      <td>Amazon.co.uk</td>
+                      <td class="muted" style="max-width:230px">"Pairing on the parser was genuinely fun."</td>
+                      <td class="num">$15</td><td><span class="pill good">Claimed</span></td>
+                      <td class="num muted">Jun 22</td>
+                      <td><span class="btn gh sm">View code</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div style="padding:11px 16px; border-top:1px solid #EFEDF4; position:relative">
+                  <span class="muted" style="font-size:11.5px">Showing 5 of 9</span>
+                  <span class="mark" style="top:-10px; left:150px">2</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="legend">
+      <div><b>1</b><p><em>Received and claimed as separate totals</em>, matching the HR dashboard's logic. The
+        gap between them is the number that matters, and it's given its own tile with the action attached.</p></div>
+      <div><b>2</b><p><em>The message is a first-class column,</em> not a hover tooltip. For most recipients the
+        note is the part they keep — the gift card is secondary.</p></div>
+    </div>
+  </section>
+
+  <section class="sec doc-prose" id="open">
+    <div class="sec-h"><span class="num">§3</span><h3>Assumptions and open questions</h3></div>
+    <p class="sec-sub" style="max-width:68ch">Everything below is a decision I made to keep the mockups
+      coherent, or a question the mockups can't answer. None of it is settled.</p>
+
+    <div class="legend" style="grid-template-columns:1fr">
+      <div><b>A</b><p><em>Budget is per calendar year and doesn't roll over.</em> Every "days remaining" and
+        pace warning in this document depends on that. Monthly or quarterly allocation would change the
+        dashboard's central metric.</p></div>
+      <div><b>B</b><p><em>Pace is linear.</em> "Behind pace" compares spend to the fraction of the year
+        elapsed. If giving is expected to spike at year-end, most of the red on the dashboard is wrong.</p></div>
+      <div><b>C</b><p><em>Template B is my invention.</em> You specified the unused-budget Slack message; the
+        claim-tracking Nudge needed different copy, so I wrote it. Confirm or replace.</p></div>
+      <div><b>D</b><p><em>Currency shown in USD, catalog priced in GBP.</em> The existing product mixes GBP and
+        KRW products under a US$ balance. The $80 allowance is shown in USD throughout; how it converts at
+        purchase needs a real answer.</p></div>
+      <div><b>E</b><p><em>Can you send kudos to anyone, or only outside your own team?</em> The mockups assume
+        anyone. Some programmes block manager-to-report giving to avoid it reading as compensation.</p></div>
+      <div><b>F</b><p><em>Do unclaimed cards return to the sender's budget on expiry?</em> Currently modelled
+        as spent-and-lost, which is why the expiry warning is so prominent. Refunding would soften it.</p></div>
+      <div><b>G</b><p><em>Is the leaderboard visible to employees?</em> Shown here as HR-only. Making it public
+        drives participation but turns recognition into a competition — a real product decision, not a UI one.</p></div>
+      <div><b>H</b><p><em>Network map data sensitivity.</em> Individual-level relationship mapping may require
+        employee notice or works-council consultation in some jurisdictions. Recommend admin-only access and a
+        stated retention window before this ships.</p></div>
+      <div><b>I</b><p><em>Who can read the kudos messages?</em> Relationships (1.5) shows HR what colleagues
+        wrote to each other. Amounts and dates are uncontroversial; free text is not, and visibility changes
+        what people write. Three options are laid out in 1.5 — pick one before build.</p></div>
+    </div>
+
+    <div class="note">
+      <strong>WHAT THIS DOCUMENT ISN'T</strong><br>
+      No engineering design, no data model, no permissions matrix beyond "admin vs. employee", and no mobile
+      layouts. All figures are fabricated. Nothing here is clickable — it's a specification, not a prototype.
+    </div>
+  </section>
+
+  <footer style="margin-top:72px; padding-top:22px; border-top:1px solid var(--rule); display:flex; gap:16px; flex-wrap:wrap; align-items:baseline">
+    <span class="eyebrow">Kudos Gift Tracker · UX Specification v0.2</span>
+    <span class="eyebrow" style="margin-left:auto">SodaGift for Biz · Aug 30, 2026 · Mock data throughout</span>
+  </footer>
+</div>
