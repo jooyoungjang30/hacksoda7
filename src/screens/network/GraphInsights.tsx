@@ -145,25 +145,49 @@ export function GraphInsights({ insights }: { insights: GraphInsightsData }) {
                     <b className="text-ink">
                       {insights.crossOffice.worst.topInboundSender.count} of them
                     </b>{' '}
-                    came from {insights.crossOffice.worst.topInboundSender.person.name} alone
+                    came from{' '}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onPersonClick(insights.crossOffice.worst!.topInboundSender!.person.id)
+                      }
+                      className="font-semibold text-ink hover:underline"
+                    >
+                      {insights.crossOffice.worst.topInboundSender.person.name}
+                    </button>{' '}
+                    alone
                   </>
                 )}
               .
-              <div className="mt-2 flex flex-wrap gap-1.5">
+              {/* An aligned table, not pills: pills mean "a person you can click"
+                  everywhere else in this panel, and four numbers per office is
+                  more than a chip can hold without wrapping badly. */}
+              <div className="mt-2.5 border-t border-warn/25 pt-2">
+                <div className="grid grid-cols-[1fr_auto_auto_auto] items-baseline gap-x-3 text-[10px] font-semibold tracking-wider text-muted uppercase">
+                  <span>Office</span>
+                  <span className="text-right">Reached</span>
+                  <span className="text-right">Sent out</span>
+                  <span className="text-right">Received in</span>
+                </div>
                 {insights.crossOffice.offices.map((o) => (
-                  <span
+                  <div
                     key={o.office.id}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-2 py-0.5 text-[11px]"
+                    className="grid grid-cols-[1fr_auto_auto_auto] items-baseline gap-x-3 py-0.5 text-[11.5px] tabular-nums"
                   >
-                    <span
-                      className="inline-block h-2 w-2 rounded-full"
-                      style={{ background: o.office.color }}
-                    />
-                    <b>{o.office.name}</b>
-                    <span className="tabular-nums text-muted">
-                      {percent(o.ratio)} reached . {o.outbound} sent out . {o.inbound} received in
+                    <span className="flex items-center gap-1.5 truncate">
+                      <i
+                        className="h-2 w-2 flex-none rounded-full"
+                        style={{ background: o.office.color }}
+                      />
+                      <b className="text-ink">{o.office.name}</b>
                     </span>
-                  </span>
+                    <span className="text-right">
+                      <b className={o.ratio < 0.5 ? 'text-crit' : 'text-ink'}>{percent(o.ratio)}</b>
+                      <span className="text-muted"> ({o.reached}/{o.headcount})</span>
+                    </span>
+                    <span className="text-right text-muted">{o.outbound}</span>
+                    <span className="text-right text-muted">{o.inbound}</span>
+                  </div>
                 ))}
               </div>
             </InsightCard>
