@@ -66,7 +66,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-async function send({ targetId = 'wei', suggestedTo = 'priya' }) {
+async function send({ targetId = 'wei', suggestedTo = 'sofia' }) {
   if (!/^https?:\/\//.test(APP))
     throw new Error(
       `APP_URL is "${APP || 'unset'}" — Slack rejects a button whose url is not ` +

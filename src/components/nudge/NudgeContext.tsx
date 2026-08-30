@@ -35,7 +35,7 @@ export function NudgeProvider({ children }: { children: ReactNode }) {
     fetch('/api/nudge', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ targetId: 'wei', suggestedTo: 'priya' }),
+      body: JSON.stringify({ targetId: 'wei', suggestedTo: 'sofia' }),
     }).catch(() => {});
   }
 

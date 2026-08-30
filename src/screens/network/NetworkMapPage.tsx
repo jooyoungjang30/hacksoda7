@@ -9,8 +9,10 @@ import { mockPeople } from '../../mock/people';
 import { ForceGraph } from './ForceGraph';
 import { GraphInsights } from './GraphInsights';
 import type { TeamId } from '../../lib/types';
+import { useLiveKudos } from '../../hooks/useLiveKudos';
 
 export function NetworkMapPage() {
+  useLiveKudos();
   const [teamFilter, setTeamFilter] = useState<TeamId | 'all'>('all');
   const [crossTeamOnly, setCrossTeamOnly] = useState(false);
   const { nodes, links, insights } = useKudosGraph({ crossTeamOnly, teamFilter });

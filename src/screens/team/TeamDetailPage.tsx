@@ -8,8 +8,10 @@ import { useMemberStats } from '../../hooks/useMemberStats';
 import { useClaimByTeam } from '../../hooks/useClaimByTeam';
 import { TeamKpiRow } from './TeamKpiRow';
 import { MemberTable } from './MemberTable';
+import { useLiveKudos } from '../../hooks/useLiveKudos';
 
 export function TeamDetailPage() {
+  useLiveKudos();
   const { teamId } = useParams<{ teamId: string }>();
   const team = useTeamStats(teamId ?? '');
   const members = useMemberStats(teamId ?? '');

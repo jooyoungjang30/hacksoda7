@@ -1,6 +1,7 @@
 import { AppShell } from '../../components/shell/AppShell';
 import { PageHeader } from '../../components/shell/PageHeader';
 import { PageTabs } from '../../components/shell/PageTabs';
+import { useLiveKudos } from '../../hooks/useLiveKudos';
 import { useCompanyStats } from '../../hooks/useCompanyStats';
 import { useTeamStats } from '../../hooks/useTeamStats';
 import { useLeaderboard } from '../../hooks/useLeaderboard';
@@ -11,6 +12,7 @@ import { Leaderboard } from './Leaderboard';
 import { ClaimTrackingTable } from './ClaimTrackingTable';
 
 export function DashboardPage() {
+  useLiveKudos();
   const company = useCompanyStats();
   const teams = useTeamStats();
   const leaderboard = useLeaderboard(7);
