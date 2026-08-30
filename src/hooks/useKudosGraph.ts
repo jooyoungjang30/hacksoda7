@@ -24,12 +24,39 @@ export interface GraphLink {
   color: string;
 }
 
+/** One manager and the people on this list who report to them — the unit an HR
+ * reach-out action is organized around, so nobody has to contact five individuals
+ * when one message to their manager covers all of them. */
+export interface ManagerActionGroup {
+  manager: Person;
+  people: Person[];
+}
+
 export interface GraphInsights {
   mostReliedOn: { person: Person; distinctGivers: number; teamsSpanned: number };
   connector: { person: Person; teamsSentInto: number };
-  mostClosedTeam: { team: Team; ratio: number };
-  dormantCount: number;
+  mostClosedTeam: { team: Team; ratio: number; manager: Person };
+  /** No kudos given or received in the last 90 days. */
+  dormant: { count: number; groups: ManagerActionGroup[] };
   mutualPairRatio: number;
+  /** Share of ALL company kudos that cross a team boundary — the org-wide
+   * collaboration headline, as distinct from any one team's closed ratio. */
+  crossTeamRatio: number;
+  /** Received kudos at least once but has never given any — recognised, but not
+   * participating in the culture of giving. */
+  receiveOnly: { count: number; groups: ManagerActionGroup[] };
+  /** Everything they've ever received came from a single colleague — if that one
+   * relationship lapses, they get no organic recognition at all. */
+  singleSource: { count: number; groups: ManagerActionGroup[] };
+  /** Team pairs whose only connection runs through a single person on each side —
+   * if either leaves, those two teams stop exchanging kudos entirely. */
+  fragileBridges: {
+    count: number;
+    totalConnectedPairs: number;
+    example: { teamA: Team; teamB: Team; people: [Person, Person]; managers: [Person, Person] } | null;
+  };
+  /** The single strongest two-way relationship, by combined kudos value. */
+  strongestBond: { a: Person; b: Person; totalCents: number } | null;
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -38,6 +65,37 @@ function clamp(value: number, min: number, max: number): number {
 
 function teamById(teamId: TeamId): Team {
   return mockTeams.find((t) => t.id === teamId)!;
+}
+
+function personById(personId: PersonId): Person {
+  return mockPeople.find((p) => p.id === personId)!;
+}
+
+function managerOf(person: Person): Person | null {
+  return person.managerId ? personById(person.managerId) : null;
+}
+
+/** The one person on a team with no manager of their own. */
+function managerOfTeam(teamId: TeamId): Person {
+  return mockPeople.find((p) => p.teamId === teamId && p.managerId === null)!;
+}
+
+/** Groups people needing follow-up by who to actually contact: their manager.
+ * Anyone with no manager on file (a team lead themselves) is defensively skipped —
+ * none of the current risk cohorts include a team lead, but a future data edit
+ * shouldn't silently misattribute the group if one ever does. */
+function groupByManager(people: Person[]): ManagerActionGroup[] {
+  const byManager = new Map<PersonId, ManagerActionGroup>();
+  for (const person of people) {
+    const manager = managerOf(person);
+    if (!manager) continue;
+    const existing = byManager.get(manager.id);
+    if (existing) existing.people.push(person);
+    else byManager.set(manager.id, { manager, people: [person] });
+  }
+  return [...byManager.values()].sort(
+    (a, b) => b.people.length - a.people.length || a.manager.name.localeCompare(b.manager.name),
+  );
 }
 
 function isDormant(personId: PersonId): boolean {
@@ -50,7 +108,9 @@ function isDormant(personId: PersonId): boolean {
 /** Insights are always computed from the full company-wide dataset — they describe
  * fixed facts about the org, independent of the graph's current filter/toggle state. */
 function computeInsights(): GraphInsights {
-  const dormantCount = mockPeople.filter((p) => isDormant(p.id)).length;
+  const realKudos = mockKudos.filter((k) => k.fromId !== k.toId);
+
+  const dormantPeople = mockPeople.filter((p) => isDormant(p.id));
 
   // mostReliedOn: highest distinct-giver count, + how many teams those givers span
   let mostReliedOn = { person: mockPeople[0], distinctGivers: -1, teamsSpanned: 0 };
@@ -58,7 +118,7 @@ function computeInsights(): GraphInsights {
     const givers = mockKudos.filter((k) => k.toId === person.id).map((k) => k.fromId);
     const distinctGivers = new Set(givers).size;
     if (distinctGivers > mostReliedOn.distinctGivers) {
-      const teamsSpanned = new Set(givers.map((id) => mockPeople.find((p) => p.id === id)!.teamId)).size;
+      const teamsSpanned = new Set(givers.map((id) => personById(id).teamId)).size;
       mostReliedOn = { person, distinctGivers, teamsSpanned };
     }
   }
@@ -67,7 +127,7 @@ function computeInsights(): GraphInsights {
   let connector = { person: mockPeople[0], teamsSentInto: -1 };
   for (const person of mockPeople) {
     const recipients = mockKudos.filter((k) => k.fromId === person.id).map((k) => k.toId);
-    const teamsSentInto = new Set(recipients.map((id) => mockPeople.find((p) => p.id === id)!.teamId)).size;
+    const teamsSentInto = new Set(recipients.map((id) => personById(id).teamId)).size;
     if (teamsSentInto > connector.teamsSentInto) connector = { person, teamsSentInto };
   }
 
@@ -85,11 +145,13 @@ function computeInsights(): GraphInsights {
   // mutualPairRatio: pairs with edges in both directions / total distinct pairs
   const pairs = new Set<string>();
   const directed = new Set<string>();
-  for (const k of mockKudos) {
-    if (k.fromId === k.toId) continue;
+  const pairTotals = new Map<string, number>();
+  for (const k of realKudos) {
     const [a, b] = [k.fromId, k.toId].sort();
-    pairs.add(`${a}|${b}`);
+    const key = `${a}|${b}`;
+    pairs.add(key);
     directed.add(`${k.fromId}>${k.toId}`);
+    pairTotals.set(key, (pairTotals.get(key) ?? 0) + k.amountCents);
   }
   let mutualCount = 0;
   for (const pair of pairs) {
@@ -98,7 +160,77 @@ function computeInsights(): GraphInsights {
   }
   const mutualPairRatio = pairs.size > 0 ? mutualCount / pairs.size : 0;
 
-  return { mostReliedOn, connector, mostClosedTeam, dormantCount, mutualPairRatio };
+  // crossTeamRatio: org-wide share of edges that cross a team boundary
+  const crossEdges = realKudos.filter((k) => personById(k.fromId).teamId !== personById(k.toId).teamId);
+  const crossTeamRatio = realKudos.length > 0 ? crossEdges.length / realKudos.length : 0;
+
+  // receiveOnly: received at least once, never gave
+  const receiveOnlyPeople = mockPeople.filter((p) => {
+    const gave = mockKudos.some((k) => k.fromId === p.id);
+    const received = mockKudos.some((k) => k.toId === p.id);
+    return received && !gave;
+  });
+
+  // singleSource: every kudo they've received came from the same one person
+  const singleSourcePeople = mockPeople.filter((p) => {
+    const givers = new Set(mockKudos.filter((k) => k.toId === p.id).map((k) => k.fromId));
+    return givers.size === 1;
+  });
+
+  // fragileBridges: team pairs connected by exactly one person on each side
+  let fragileCount = 0;
+  let totalConnectedPairs = 0;
+  let fragileExample: GraphInsights['fragileBridges']['example'] = null;
+  for (let i = 0; i < mockTeams.length; i++) {
+    for (let j = i + 1; j < mockTeams.length; j++) {
+      const teamA = mockTeams[i];
+      const teamB = mockTeams[j];
+      const bridging = realKudos.filter((k) => {
+        const ta = personById(k.fromId).teamId;
+        const tb = personById(k.toId).teamId;
+        return (ta === teamA.id && tb === teamB.id) || (ta === teamB.id && tb === teamA.id);
+      });
+      if (bridging.length === 0) continue;
+      totalConnectedPairs++;
+      const distinctBridgers = [...new Set(bridging.flatMap((k) => [k.fromId, k.toId]))];
+      if (distinctBridgers.length <= 2) {
+        fragileCount++;
+        if (!fragileExample) {
+          const people: [Person, Person] = [personById(distinctBridgers[0]), personById(distinctBridgers[1])];
+          fragileExample = {
+            teamA,
+            teamB,
+            people,
+            managers: [managerOfTeam(people[0].teamId), managerOfTeam(people[1].teamId)],
+          };
+        }
+      }
+    }
+  }
+
+  // strongestBond: highest combined two-way total between any one pair
+  let strongestBond: GraphInsights['strongestBond'] = null;
+  let bestTotal = -1;
+  for (const [key, total] of pairTotals) {
+    if (total > bestTotal) {
+      const [a, b] = key.split('|');
+      bestTotal = total;
+      strongestBond = { a: personById(a), b: personById(b), totalCents: total };
+    }
+  }
+
+  return {
+    mostReliedOn,
+    connector,
+    mostClosedTeam: { ...mostClosedTeam, manager: managerOfTeam(mostClosedTeam.team.id) },
+    dormant: { count: dormantPeople.length, groups: groupByManager(dormantPeople) },
+    mutualPairRatio,
+    crossTeamRatio,
+    receiveOnly: { count: receiveOnlyPeople.length, groups: groupByManager(receiveOnlyPeople) },
+    singleSource: { count: singleSourcePeople.length, groups: groupByManager(singleSourcePeople) },
+    fragileBridges: { count: fragileCount, totalConnectedPairs, example: fragileExample },
+    strongestBond,
+  };
 }
 
 export function useKudosGraph({
@@ -119,7 +251,7 @@ export function useKudosGraph({
       name: person.name.split(' ')[0],
       teamId: person.teamId,
       color: dormant ? DORMANT_COLOR : teamById(person.teamId).color,
-      r: clamp(5 + Math.sqrt(receivedCents / 100) * 1.6, 5, 20),
+      r: clamp(3 + Math.sqrt(receivedCents / 100) * 0.5, 3, 9),
       receivedCents,
       isDormant: dormant,
     };

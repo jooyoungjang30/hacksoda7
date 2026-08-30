@@ -14,6 +14,10 @@ export interface Person {
   role: string;
   teamId: TeamId;
   slackLinked: boolean; // drives the email-fallback flag in 1.3
+  // Flat, one level: each team's lead/manager has managerId null, everyone else on
+  // that team reports to them. Powers the "reach out to this person's manager"
+  // action items on the network map's HR Insights panel.
+  managerId: PersonId | null;
 }
 
 /** The only authored data. Everything else is derived from this array. */

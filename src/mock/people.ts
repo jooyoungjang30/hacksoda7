@@ -1,6 +1,18 @@
 import type { Person } from '../lib/types';
 
-export const mockPeople: Person[] = [
+// Flat org, one level: each team's manager reports to nobody modeled (managerId
+// null); everyone else on the team reports to their team's manager. Sales had no
+// manager-titled role in the original data, so Kofi Mensah is promoted here.
+const TEAM_MANAGER: Record<string, string> = {
+  engineering: 'marcus-bell',
+  design: 'sofia-marchetti',
+  marketing: 'ana-duarte',
+  sales: 'kofi-mensah',
+  'people-ops': 'leah-osborne',
+  finance: 'mira-costa',
+};
+
+const raw: Omit<Person, 'managerId'>[] = [
   { id: 'priya-raman', name: 'Priya Raman', initials: 'PR', role: 'Staff Engineer', teamId: 'engineering', slackLinked: true },
   { id: 'marcus-bell', name: 'Marcus Bell', initials: 'MB', role: 'Engineering Manager', teamId: 'engineering', slackLinked: true },
   { id: 'dana-whitfield', name: 'Dana Whitfield', initials: 'DW', role: 'Senior Engineer', teamId: 'engineering', slackLinked: true },
@@ -29,7 +41,7 @@ export const mockPeople: Person[] = [
   { id: 'hana-suzuki', name: 'Hana Suzuki', initials: 'HS', role: 'Growth Marketer', teamId: 'marketing', slackLinked: true },
   { id: 'leo-fontaine', name: 'Leo Fontaine', initials: 'LF', role: 'Marketing Specialist', teamId: 'marketing', slackLinked: true },
   { id: 'priti-shah', name: 'Priti Shah', initials: 'PS', role: 'Marketing Specialist', teamId: 'marketing', slackLinked: true },
-  { id: 'kofi-mensah', name: 'Kofi Mensah', initials: 'KM', role: 'Account Executive', teamId: 'sales', slackLinked: true },
+  { id: 'kofi-mensah', name: 'Kofi Mensah', initials: 'KM', role: 'Sales Manager', teamId: 'sales', slackLinked: true },
   { id: 'bianca-alves', name: 'Bianca Alves', initials: 'BA', role: 'Account Executive', teamId: 'sales', slackLinked: true },
   { id: 'hal-jennings', name: 'Hal Jennings', initials: 'HJ', role: 'Sales Development Rep', teamId: 'sales', slackLinked: true },
   { id: 'drew-tanner', name: 'Drew Tanner', initials: 'DT', role: 'Account Executive', teamId: 'sales', slackLinked: true },
@@ -49,3 +61,8 @@ export const mockPeople: Person[] = [
   { id: 'mira-costa', name: 'Mira Costa', initials: 'MC', role: 'Finance Manager', teamId: 'finance', slackLinked: true },
   { id: 'jed-palmer', name: 'Jed Palmer', initials: 'JP', role: 'Accountant', teamId: 'finance', slackLinked: true },
 ];
+
+export const mockPeople: Person[] = raw.map((p) => ({
+  ...p,
+  managerId: p.id === TEAM_MANAGER[p.teamId] ? null : TEAM_MANAGER[p.teamId],
+}));
