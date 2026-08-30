@@ -20,7 +20,8 @@ export async function getPreferences(employeeId: string) {
   const { data, error } = await db.from('gift_preferences')
     .select('rank, gift_cards(*)').eq('employee_id', employeeId).order('rank')
   if (error) throw error
-  return (data ?? []).map(r => ({ rank: r.rank, card: r.gift_cards as unknown as GiftCard }))
+  return (data ?? []).map((r: { rank: number; gift_cards: unknown }) =>
+    ({ rank: r.rank, card: r.gift_cards as GiftCard }))
 }
 
 export async function getCatalog() {
