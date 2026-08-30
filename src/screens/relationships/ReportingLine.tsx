@@ -170,7 +170,7 @@ export function ReportingLine({
             <text x={CENTER.x + centerTextX} y={CENTER.y - 3} fontFamily="IBM Plex Sans, sans-serif" fontSize={11} fontWeight={600} fill="#fff">
               {centerName}
             </text>
-            <text x={CENTER.x + centerTextX} y={CENTER.y + 10} fontFamily="IBM Plex Sans, sans-serif" fontSize={8.5} fill="#D8C7F7">
+            <text x={CENTER.x + centerTextX} y={CENTER.y + 10} fontFamily="IBM Plex Sans, sans-serif" fontSize={8.5} fill="#fff" opacity={0.85}>
               {person.role}
             </text>
           </g>
