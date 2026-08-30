@@ -39,6 +39,7 @@ export function PersonDetailPage() {
 
   return (
     <AppShell>
+      <PageTabs />
       <div className="flex items-center gap-3 px-[26px] pt-5">
         <Avatar initials={person.initials} color={teamColor} size={38} />
         <div>
@@ -66,7 +67,6 @@ export function PersonDetailPage() {
           />
         </div>
       </div>
-      <PageTabs />
 
       <div className="flex flex-col gap-5 bg-surface p-6.5">
         <div className="grid grid-cols-4 gap-3.5">
