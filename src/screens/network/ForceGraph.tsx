@@ -128,7 +128,7 @@ export function ForceGraph({
         viewBox={`${view.x} ${view.y} ${view.w} ${view.h}`}
         className={`block h-auto w-full touch-none ${panning ? 'cursor-grabbing' : 'cursor-grab'}`}
         role="img"
-        aria-label={`Force-directed graph of kudos sent between ${positionedNodes.length} colleagues, clustered by team. Scroll to zoom, drag to pan, drag a node to move it.`}
+        aria-label={`Force-directed graph of kudos sent between ${positionedNodes.length} colleagues, grouped by ${byOffice ? 'office' : 'team'}. Scroll to zoom, drag to pan, drag a node to move it.`}
         {...handlers}
       >
         <defs>
@@ -163,10 +163,10 @@ export function ForceGraph({
 
         {officeLabels.map((l) => (
           <g key={l.office.id} fontFamily="IBM Plex Sans, sans-serif" textAnchor="middle">
-            <text x={l.x} y={l.y} fill={l.office.color} fontSize={15} fontWeight={700}>
+            <text x={l.x} y={l.y} fill={l.office.color} fontSize={19} fontWeight={700}>
               {l.office.name}
             </text>
-            <text x={l.x} y={l.y + 15} fill="#8A8F9C" fontSize={11}>
+            <text x={l.x} y={l.y + 18} fill="#8A8F9C" fontSize={13}>
               {l.count} {l.count === 1 ? 'person' : 'people'}
             </text>
           </g>
@@ -204,15 +204,20 @@ export function ForceGraph({
                   stroke={focused ? '#fff' : 'rgba(255,255,255,0.25)'}
                   strokeWidth={(focused ? 2 : 1) * k}
                 />
-                <text
-                  x={n.x}
-                  y={n.y + n.r + 9 * k}
-                  fontSize={7.5 * k}
-                  fill={focused ? '#fff' : n.isDormant ? '#6E6880' : '#B9B2C9'}
-                  fontWeight={focused ? 600 : 400}
-                >
-                  {n.name}
-                </text>
+                {/* 200 names at once is unreadable from the back of a room. Show
+                    the well-connected few, whatever is hovered, and everything
+                    once someone zooms in to look properly. */}
+                {(focused || scale > 1.25 || n.r >= 8) && (
+                  <text
+                    x={n.x}
+                    y={n.y + n.r + 9 * k}
+                    fontSize={9 * k}
+                    fill={focused ? '#fff' : n.isDormant ? '#6E6880' : '#B9B2C9'}
+                    fontWeight={focused ? 600 : 400}
+                  >
+                    {n.name}
+                  </text>
+                )}
               </g>
             );
           })}

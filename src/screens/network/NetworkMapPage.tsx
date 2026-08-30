@@ -26,7 +26,7 @@ export function NetworkMapPage() {
       <PageHeader title="Kudos Gift Tracker" />
       <PageTabs />
       <div className="bg-surface p-6.5">
-        <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.7fr)] items-start gap-5">
+        <div className="grid grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] items-start gap-5">
           <div className="flex flex-col gap-3.5">
             <div className="flex items-center gap-3">
               <select
