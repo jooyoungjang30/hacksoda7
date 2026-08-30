@@ -1,9 +1,18 @@
 import { createClient } from '@supabase/supabase-js'
 
-export const db = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-)
+const url = import.meta.env.VITE_SUPABASE_URL as string | undefined
+const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
+
+/** Non-null when the deployment is missing its Supabase env vars. Rendering this
+ *  beats a blank white page — createClient() throws at import time otherwise. */
+export const configError =
+  !url || !key
+    ? 'VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY are not set on this deployment. ' +
+      'In Vercel → Settings → Environment Variables, tick Preview as well as ' +
+      'Production, then redeploy.'
+    : null
+
+export const db = createClient(url ?? 'http://localhost:54321', key ?? 'placeholder')
 
 export type Employee = {
   id: string; name: string; title: string | null; team: string
