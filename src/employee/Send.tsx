@@ -12,6 +12,14 @@ const MAX_CHARS = 175
 type Pref = { rank: number; card: GiftCard }
 type Signal = { behavior?: string; values?: string[]; specificity?: number; skipped?: string }
 
+function GiftMark({ card }: { card: GiftCard }) {
+  if (card.image_url) {
+    return <img className="sw" src={card.image_url} alt="" loading="lazy"
+                style={{ objectFit: 'cover', background: '#fff' }} />
+  }
+  return <span className="sw" style={{ background: card.swatch }}>{card.glyph}</span>
+}
+
 export default function Send() {
   const me = resolveCurrentUser()
   const [params] = useSearchParams()
@@ -191,7 +199,7 @@ export default function Send() {
                       className={'gift' + (g.id === giftId ? ' on' : '')}
                       onClick={() => setGiftId(g.id)}
                     >
-                      <span className="sw" style={{ background: g.swatch }}>{g.glyph}</span>
+                      <GiftMark card={g} />
                       <div className="nm">{g.brand}</div>
                       <div className="rg">{g.country}</div>
                     </button>
@@ -208,7 +216,7 @@ export default function Send() {
                       onClick={() => setGiftId(card.id)}
                     >
                       {rank === 1 && <span className="pill vio rk">Their #1</span>}
-                      <span className="sw" style={{ background: card.swatch }}>{card.glyph}</span>
+                      <GiftMark card={card} />
                       <div className="nm">{card.brand}</div>
                       <div className="rg">instant email</div>
                     </button>

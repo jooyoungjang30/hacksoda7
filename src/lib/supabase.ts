@@ -21,6 +21,7 @@ export type Employee = {
 export type GiftCard = {
   id: string; brand: string; country: string
   min_cents: number; max_cents: number; swatch: string; glyph: string
+  image_url?: string | null
 }
 export type KudosRow = {
   id: number; sender_id: string; recipient_id: string; gift_card_id: string

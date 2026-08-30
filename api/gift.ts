@@ -54,14 +54,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           sender: { name: k.sender_name },
         },
         message: k.message,
-        // Makes the call idempotent — a retry can't double-send a gift.
-        external_reference_id: `kudos-${k.id}`,
+        // Idempotency key. SodaGift rejects anything non-alphanumeric here —
+        // a hyphen returns invalid_request, which is easy to miss.
+        external_reference_id: `kudos${k.id}`,
       }),
     })
 
     const json = await order.json()
     if (!order.ok) {
       console.error('sodagift', order.status, json)
+      await db.from('kudos')
+        .update({ soda_status: `error: ${json.errorCode ?? order.status} ${json.message ?? ''}`.slice(0, 200) })
+        .eq('id', k.id)
       return res.status(200).json({ skipped: `sodagift ${order.status}`, detail: json })
     }
 
