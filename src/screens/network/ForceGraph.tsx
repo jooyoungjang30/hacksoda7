@@ -5,8 +5,10 @@ import { useZoomPan } from './useZoomPan';
 
 // Square-ish: the map now sits in a half-width column with the legend below it
 // rather than beside it, so it has more vertical room than the old widescreen card.
-const WIDTH = 600;
-const HEIGHT = 560;
+// Sized generously so the force layout (see useForceLayout) has room to space
+// nodes and links out rather than crowding them toward the centre.
+const WIDTH = 900;
+const HEIGHT = 850;
 
 // Dark canvas, Obsidian-style: the graph reads as a viewport into the data rather
 // than another white card, and the team colours carry far better on it.
@@ -149,7 +151,7 @@ export function ForceGraph({
                 <circle
                   cx={n.x}
                   cy={n.y}
-                  r={n.r + (focused ? 9 : 5)}
+                  r={n.r + (focused ? 12 : 7)}
                   fill="url(#node-halo)"
                   opacity={n.isDormant ? 0.12 : focused ? 0.5 : 0.22}
                   style={{ transition: 'opacity 160ms ease' }}
@@ -164,8 +166,8 @@ export function ForceGraph({
                 />
                 <text
                   x={n.x}
-                  y={n.y + n.r + 9 * k}
-                  fontSize={7.5 * k}
+                  y={n.y + n.r + 13 * k}
+                  fontSize={11 * k}
                   fill={focused ? '#fff' : n.isDormant ? '#6E6880' : '#B9B2C9'}
                   fontWeight={focused ? 600 : 400}
                 >

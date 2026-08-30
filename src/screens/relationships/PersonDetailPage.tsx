@@ -108,7 +108,8 @@ export function PersonDetailPage() {
                     </span>
                   </div>
                 </div>
-                <div className="mt-2.5">
+                <div className="mt-2.5 flex flex-col gap-1">
+                  <div className="text-[10px] font-semibold tracking-wider text-warn uppercase">Action items</div>
                   <NudgeButton
                     personIds={[manager.id]}
                     template="manager_gap"
@@ -129,6 +130,23 @@ export function PersonDetailPage() {
                   {flag === 'receive_only' && 'This person has received kudos but never sent any.'}
                   {flag === 'team_only' && "Every one of this person's connections is on their own team."}
                 </p>
+                {manager && flag !== 'team_only' && (
+                  <div className="mt-2.5 flex flex-col gap-1 border-t border-line pt-2.5">
+                    <div className="text-[10px] font-semibold tracking-wider text-warn uppercase">Action items</div>
+                    <div className="text-[12px] leading-relaxed text-ink">
+                      Reach out to <b>{manager.name}</b> to recognise {person.name.split(' ')[0]}.
+                    </div>
+                    <div className="mt-1">
+                      <NudgeButton
+                        personIds={[manager.id]}
+                        template="manager_gap"
+                        label={`Nudge ${manager.name}`}
+                        people={people}
+                        teams={teams}
+                      />
+                    </div>
+                  </div>
+                )}
               </Card>
             )}
           </div>

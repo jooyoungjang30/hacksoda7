@@ -293,7 +293,7 @@ export function buildKudosGraph({
       name: person.name.split(' ')[0],
       teamId: person.teamId,
       color: dormant ? DORMANT_COLOR : teamById(person.teamId).color,
-      r: clamp(3 + Math.sqrt(receivedCents / 100) * 0.5, 3, 9),
+      r: clamp(5 + Math.sqrt(receivedCents / 100) * 0.7, 5, 13),
       receivedCents,
       isDormant: dormant,
     };

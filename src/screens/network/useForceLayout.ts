@@ -30,13 +30,22 @@ const TEAM_ORDER: TeamId[] = ['engineering', 'design', 'marketing', 'sales', 'pe
 function teamCentroids(width: number, height: number): Record<TeamId, { x: number; y: number }> {
   const cx = width / 2;
   const cy = height / 2;
-  const radius = Math.min(width, height) * 0.32;
+  const radius = Math.min(width, height) * 0.44;
   const centroids = {} as Record<TeamId, { x: number; y: number }>;
   TEAM_ORDER.forEach((id, i) => {
     const angle = -Math.PI / 2 + (i * 2 * Math.PI) / TEAM_ORDER.length;
     centroids[id] = { x: cx + radius * Math.cos(angle), y: cy + radius * Math.sin(angle) };
   });
   return centroids;
+}
+
+type SimLink = { source: PositionedNode; target: PositionedNode };
+
+/** Same-team links pull hard (this is what makes a cluster cohere); cross-team
+ * links pull just enough to keep the graph connected, so 800+ cross-team edges
+ * don't drag every cluster back into one blob. */
+function sameTeamStrength(l: SimLink): number {
+  return l.source.teamId === l.target.teamId ? 0.55 : 0.04;
 }
 
 export function prefersReducedMotion(): boolean {
@@ -77,18 +86,18 @@ export function useForceLayout(nodes: GraphNode[], links: GraphLink[], width: nu
         'link',
         forceLink(linkCopies)
           .id((d) => (d as PositionedNode).id)
-          .distance(60)
-          .strength(0.35),
+          .distance(100)
+          .strength((l) => sameTeamStrength(l as SimLink)),
       )
-      .force('charge', forceManyBody().strength(-180))
-      .force('collide', forceCollide((d) => (d as PositionedNode).r + 9))
+      .force('charge', forceManyBody().strength(-300))
+      .force('collide', forceCollide((d) => (d as PositionedNode).r + 14))
       .force(
         'x',
-        forceX<PositionedNode>((d) => centroids[d.teamId]?.x ?? width / 2).strength(0.12),
+        forceX<PositionedNode>((d) => centroids[d.teamId]?.x ?? width / 2).strength(0.36),
       )
       .force(
         'y',
-        forceY<PositionedNode>((d) => centroids[d.teamId]?.y ?? height / 2).strength(0.12),
+        forceY<PositionedNode>((d) => centroids[d.teamId]?.y ?? height / 2).strength(0.36),
       )
       .stop()
       .tick(300);
@@ -122,18 +131,18 @@ export function useForceLayout(nodes: GraphNode[], links: GraphLink[], width: nu
         'link',
         forceLink(positionedLinks as never[])
           .id((d) => (d as PositionedNode).id)
-          .distance(60)
-          .strength(0.35),
+          .distance(100)
+          .strength((l) => sameTeamStrength(l as SimLink)),
       )
-      .force('charge', forceManyBody().strength(-180))
-      .force('collide', forceCollide((d) => (d as PositionedNode).r + 9))
+      .force('charge', forceManyBody().strength(-300))
+      .force('collide', forceCollide((d) => (d as PositionedNode).r + 14))
       .force(
         'x',
-        forceX<PositionedNode>((d) => centroids[d.teamId]?.x ?? cx).strength(0.12),
+        forceX<PositionedNode>((d) => centroids[d.teamId]?.x ?? cx).strength(0.36),
       )
       .force(
         'y',
-        forceY<PositionedNode>((d) => centroids[d.teamId]?.y ?? cy).strength(0.12),
+        forceY<PositionedNode>((d) => centroids[d.teamId]?.y ?? cy).strength(0.36),
       )
       .alpha(0.9)
       .alphaDecay(0.035)

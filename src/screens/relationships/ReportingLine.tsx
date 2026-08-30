@@ -106,14 +106,18 @@ export function ReportingLine({
             const p = point(CONNECTION_R, angle);
             const r = nodeRadius(c.totalCents);
             const labelBelow = angle > 90 && angle < 270;
-            const dy = labelBelow ? r + 12 : -(r + 6);
+            // Stack both lines on the same side of the node — above it, the value
+            // line must go *further* from the node than the name, not back toward it.
+            const dir = labelBelow ? 1 : -1;
+            const nameY = p.y + dir * (r + 12);
+            const valueY = nameY + dir * 12;
             return (
               <g key={c.person.id}>
                 <circle cx={p.x} cy={p.y} r={r} fill={teamColor(c.person.teamId)} opacity={0.9} />
-                <text x={p.x} y={p.y + dy} fontSize={9.5} fontWeight={600} fill="#2F2540">
+                <text x={p.x} y={nameY} fontSize={9.5} fontWeight={600} fill="#2F2540">
                   {c.person.name.split(' ')[0]}
                 </text>
-                <text x={p.x} y={p.y + dy + 12} fontSize={8.5} fill="#8A8F9C">
+                <text x={p.x} y={valueY} fontSize={8.5} fill="#8A8F9C">
                   ${Math.round(c.totalCents / 100)} · {c.direction === 'both' ? 'both ways' : c.direction}
                 </text>
               </g>
