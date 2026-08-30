@@ -18,6 +18,22 @@ export interface Person {
   // that team reports to them. Powers the "reach out to this person's manager"
   // action items on the network map's HR Insights panel.
   managerId: PersonId | null;
+  /** Which office this person sits in. Coverage, the map's colouring, and every
+   *  cross-region diagnostic key off this. */
+  officeId: OfficeId;
+  /** ISO date they joined. Tenure is what makes "fourteen months, nobody has
+   *  reached her" land rather than being an abstract zero. */
+  startedAt: string | null;
+}
+
+export type OfficeId = string;
+
+export interface Office {
+  id: OfficeId;
+  name: string;
+  country: string;
+  timezone: string;
+  color: string;
 }
 
 /** The only authored data. Everything else is derived from this array. */
