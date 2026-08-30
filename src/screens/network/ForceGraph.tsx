@@ -189,14 +189,17 @@ export function ForceGraph({
                 onPointerUp={onNodePointerUp}
                 onPointerCancel={onNodePointerUp}
               >
-                {/* Halo: cheap glow that reads on the dark ground without an SVG filter. */}
+                {/* Halo: cheap glow that reads on the dark ground without an SVG filter.
+                    No transition of its own — the parent g's opacity transition already
+                    fades it, and a second opacity transition on a gradient fill is what
+                    causes the black-square flicker at high zoom (Chromium/Skia re-rasterizes
+                    the gradient on every transition frame). */}
                 <circle
                   cx={n.x}
                   cy={n.y}
                   r={n.r + (focused ? 12 : 7)}
                   fill="url(#node-halo)"
                   opacity={n.isDormant ? 0.12 : focused ? 0.5 : 0.22}
-                  style={{ transition: 'opacity 160ms ease' }}
                 />
                 <circle
                   cx={n.x}
