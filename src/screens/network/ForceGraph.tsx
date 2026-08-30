@@ -1,7 +1,8 @@
 import { useMemo, useRef, useState } from 'react';
 import type { GraphInsights, GraphLink, GraphNode } from '../../hooks/useKudosGraph';
-import { useForceLayout, type PositionedNode } from './useForceLayout';
+import { useForceLayout, type ClusterBy, type PositionedNode } from './useForceLayout';
 import { useZoomPan } from './useZoomPan';
+import type { Office } from '../../lib/types';
 
 // Square-ish: the map now sits in a half-width column with the legend below it
 // rather than beside it, so it has more vertical room than the old widescreen card.
@@ -18,18 +19,41 @@ export function ForceGraph({
   links,
   insights,
   onNodeClick,
+  clusterBy = 'team',
+  offices = [],
 }: {
   nodes: GraphNode[];
   links: GraphLink[];
   insights: GraphInsights;
   onNodeClick?: (id: string) => void;
+  clusterBy?: ClusterBy;
+  offices?: Office[];
 }) {
   const { positionedNodes, positionedLinks, dragStart, dragMove, dragEnd } = useForceLayout(
     nodes,
     links,
     WIDTH,
     HEIGHT,
+    clusterBy,
   );
+
+  // When grouped, label each cluster where its people actually ended up, so the
+  // caption follows the layout instead of assuming a fixed position.
+  const officeLabels =
+    clusterBy === 'office'
+      ? offices
+          .map((office) => {
+            const members = positionedNodes.filter((n) => n.officeId === office.id);
+            if (members.length === 0) return null;
+            return {
+              office,
+              count: members.length,
+              x: members.reduce((sum, n) => sum + n.x, 0) / members.length,
+              y: Math.min(...members.map((n) => n.y)) - 26,
+            };
+          })
+          .filter((v): v is NonNullable<typeof v> => v !== null)
+      : [];
   const { svgRef, toSvg, view, scale, panning, isDefault, zoomIn, zoomOut, reset, handlers } =
     useZoomPan(WIDTH, HEIGHT);
 
@@ -129,6 +153,17 @@ export function ForceGraph({
             />
           ))}
         </g>
+
+        {officeLabels.map((l) => (
+          <g key={l.office.id} fontFamily="IBM Plex Sans, sans-serif" textAnchor="middle">
+            <text x={l.x} y={l.y} fill={l.office.color} fontSize={15} fontWeight={700}>
+              {l.office.name}
+            </text>
+            <text x={l.x} y={l.y + 15} fill="#8A8F9C" fontSize={11}>
+              {l.count} {l.count === 1 ? 'person' : 'people'}
+            </text>
+          </g>
+        ))}
 
         <g fontFamily="IBM Plex Sans, sans-serif" textAnchor="middle">
           {positionedNodes.map((n) => {

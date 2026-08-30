@@ -15,6 +15,7 @@ export function NetworkMapPage() {
   const navigate = useNavigate();
   const [teamFilter, setTeamFilter] = useState<TeamId | 'all'>('all');
   const [crossTeamOnly, setCrossTeamOnly] = useState(false);
+  const [groupByOffice, setGroupByOffice] = useState(false);
 
   if (loading) return <AppShell><PageHeader title="Kudos Gift Tracker" /><PageTabs /></AppShell>;
 
@@ -49,6 +50,16 @@ export function NetworkMapPage() {
               >
                 {crossTeamOnly ? '☑' : '☐'} Cross-team only
               </button>
+              <button
+                type="button"
+                onClick={() => setGroupByOffice((v) => !v)}
+                aria-pressed={groupByOffice}
+                className={`rounded-md border px-2.5 py-1.5 text-[12.5px] whitespace-nowrap ${
+                  groupByOffice ? 'border-brand bg-brand-soft text-brand' : 'border-line bg-white text-ink'
+                }`}
+              >
+                {groupByOffice ? 'Ungroup' : 'Cluster by office'}
+              </button>
               <span className="ml-auto text-[11.5px] whitespace-nowrap text-muted">
                 {nodes.length} people · {links.length} pairs
               </span>
@@ -60,6 +71,8 @@ export function NetworkMapPage() {
                 links={links}
                 insights={insights}
                 onNodeClick={(id) => navigate(`/kudos/relationships/${id}`)}
+                clusterBy={groupByOffice ? 'office' : 'team'}
+                offices={offices}
               />
             </Card>
 

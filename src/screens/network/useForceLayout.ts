@@ -27,6 +27,35 @@ export interface PositionedLink {
 
 const TEAM_ORDER: TeamId[] = ['engineering', 'design', 'marketing', 'sales', 'people-ops', 'finance'];
 
+export type ClusterBy = 'team' | 'office';
+
+/**
+ * Offices sit side by side on the x-axis rather than on a ring: with two sites the
+ * gap between them IS the finding, and a horizontal split reads as "these are two
+ * places" far more directly than two arcs of a circle. Largest office goes left so
+ * the layout is stable when the data changes.
+ */
+function officeCentroids(
+  nodes: GraphNode[],
+  width: number,
+  height: number,
+): Record<string, { x: number; y: number }> {
+  const counts = new Map<string, number>();
+  for (const n of nodes) counts.set(n.officeId, (counts.get(n.officeId) ?? 0) + 1);
+  const ids = [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([id]) => id);
+
+  const out: Record<string, { x: number; y: number }> = {};
+  const span = width * 0.62;
+  const left = width / 2 - span / 2;
+  ids.forEach((id, i) => {
+    out[id] = {
+      x: ids.length === 1 ? width / 2 : left + (span * i) / (ids.length - 1),
+      y: height / 2,
+    };
+  });
+  return out;
+}
+
 function teamCentroids(width: number, height: number): Record<TeamId, { x: number; y: number }> {
   const cx = width / 2;
   const cy = height / 2;
@@ -55,13 +84,35 @@ export function prefersReducedMotion(): boolean {
  * intro, and the warm simulation that makes nodes draggable, are both skipped when
  * the viewer prefers reduced motion.
  */
-export function useForceLayout(nodes: GraphNode[], links: GraphLink[], width: number, height: number) {
+export function useForceLayout(
+  nodes: GraphNode[],
+  links: GraphLink[],
+  width: number,
+  height: number,
+  clusterBy: ClusterBy = 'team',
+) {
+  // Clustering by office needs a firmer pull: two groups with a wide gap only
+  // read as separate if the force is strong enough to beat the link springs.
+  const anchor = (() => {
+    const teams = teamCentroids(width, height);
+    const officesXY = officeCentroids(nodes, width, height);
+    return clusterBy === 'office'
+      ? {
+          x: (d: PositionedNode) => officesXY[d.officeId]?.x ?? width / 2,
+          y: (d: PositionedNode) => officesXY[d.officeId]?.y ?? height / 2,
+          strength: 0.34,
+        }
+      : {
+          x: (d: PositionedNode) => teams[d.teamId]?.x ?? width / 2,
+          y: (d: PositionedNode) => teams[d.teamId]?.y ?? height / 2,
+          strength: 0.12,
+        };
+  })();
+
   const [, setFrame] = useState(0);
   const simRef = useRef<Simulation<PositionedNode, undefined> | null>(null);
 
   const { positionedNodes, positionedLinks } = useMemo(() => {
-    const centroids = teamCentroids(width, height);
-
     // d3-force mutates its inputs and replaces link.source/target string ids with
     // node object references — always pass deep copies, never the memoized derived data.
     const nodeCopies: PositionedNode[] = nodes.map((n) => ({ ...n, x: 0, y: 0 }));
@@ -82,14 +133,8 @@ export function useForceLayout(nodes: GraphNode[], links: GraphLink[], width: nu
       )
       .force('charge', forceManyBody().strength(-180))
       .force('collide', forceCollide((d) => (d as PositionedNode).r + 9))
-      .force(
-        'x',
-        forceX<PositionedNode>((d) => centroids[d.teamId]?.x ?? width / 2).strength(0.12),
-      )
-      .force(
-        'y',
-        forceY<PositionedNode>((d) => centroids[d.teamId]?.y ?? height / 2).strength(0.12),
-      )
+      .force('x', forceX<PositionedNode>(anchor.x).strength(anchor.strength))
+      .force('y', forceY<PositionedNode>(anchor.y).strength(anchor.strength))
       .stop()
       .tick(300);
 
@@ -101,12 +146,11 @@ export function useForceLayout(nodes: GraphNode[], links: GraphLink[], width: nu
     }));
 
     return { positionedNodes: nodeCopies, positionedLinks: built };
-  }, [nodes, links, width, height]);
+  }, [nodes, links, width, height, clusterBy]);
 
   useEffect(() => {
     if (prefersReducedMotion()) return;
 
-    const centroids = teamCentroids(width, height);
     const cx = width / 2;
     const cy = height / 2;
 
@@ -127,14 +171,8 @@ export function useForceLayout(nodes: GraphNode[], links: GraphLink[], width: nu
       )
       .force('charge', forceManyBody().strength(-180))
       .force('collide', forceCollide((d) => (d as PositionedNode).r + 9))
-      .force(
-        'x',
-        forceX<PositionedNode>((d) => centroids[d.teamId]?.x ?? cx).strength(0.12),
-      )
-      .force(
-        'y',
-        forceY<PositionedNode>((d) => centroids[d.teamId]?.y ?? cy).strength(0.12),
-      )
+      .force('x', forceX<PositionedNode>(anchor.x).strength(anchor.strength))
+      .force('y', forceY<PositionedNode>(anchor.y).strength(anchor.strength))
       .alpha(0.9)
       .alphaDecay(0.035)
       .on('tick', () => setFrame((f) => f + 1));
@@ -144,7 +182,7 @@ export function useForceLayout(nodes: GraphNode[], links: GraphLink[], width: nu
       sim.stop();
       simRef.current = null;
     };
-  }, [positionedNodes, positionedLinks, width, height]);
+  }, [positionedNodes, positionedLinks, width, height, clusterBy]);
 
   /** Pin a node under the pointer and keep the simulation warm while it moves. */
   function dragStart(node: PositionedNode) {
