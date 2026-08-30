@@ -24,7 +24,11 @@ out = ["""-- Vega — the company in the demo script. 200 people, Austin + Tokyo
 
 begin;
 
--- Break the self-referencing manager FK first: a kept employee may point at
+-- Clear rehearsal nudges first: nudges.fulfilled_kudos_id references kudos, so
+-- a nudge left over from a test run blocks the delete below.
+delete from nudges;
+
+-- Break the self-referencing manager FK next: a kept employee may point at
 -- someone in the old dataset, and that row is about to disappear.
 update employees set manager_id = null;
 
