@@ -69,6 +69,29 @@ export interface GraphInsights {
   };
   /** The single strongest two-way relationship, by combined kudos value. */
   strongestBond: { a: Person; b: Person; totalCents: number } | null;
+  /** Recognition across office lines. Participation and claim rate both look
+   *  healthy company-wide while a whole site goes unreached, because every other
+   *  metric averages the sites together. This is the one that separates them. */
+  crossOffice: {
+    totalCrossings: number;
+    offices: OfficeReach[];
+    /** Lowest-coverage office with more than a handful of people — the one worth
+     *  pointing at. Null when there is only one office. */
+    worst: OfficeReach | null;
+  };
+}
+
+export interface OfficeReach {
+  office: Office;
+  headcount: number;
+  reached: number;
+  ratio: number;
+  /** Kudos that arrived from another office. */
+  inbound: number;
+  /** Kudos its people sent to another office. */
+  outbound: number;
+  /** Who sent the most of that inbound — "three of them came from one person". */
+  topInboundSender: { person: Person; count: number } | null;
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -77,7 +100,7 @@ function clamp(value: number, min: number, max: number): number {
 
 /** Insights are always computed from the full company-wide dataset — they describe
  * fixed facts about the org, independent of the graph's current filter/toggle state. */
-function computeInsights(people: Person[], teams: Team[], kudos: Kudo[]): GraphInsights {
+function computeInsights(people: Person[], teams: Team[], kudos: Kudo[], offices: Office[]): GraphInsights {
   const personById = (personId: PersonId): Person => people.find((p) => p.id === personId)!;
   const managerOf = (person: Person): Person | null => (person.managerId ? personById(person.managerId) : null);
   /** The one person on a team with no manager of their own. */
@@ -235,6 +258,33 @@ function computeInsights(people: Person[], teams: Team[], kudos: Kudo[]): GraphI
     }
   }
 
+  const officeOf = (id: PersonId) => personById(id).officeId;
+  const officeReach: OfficeReach[] = offices.map((office) => {
+    const members = people.filter((p) => p.officeId === office.id);
+    const memberIds = new Set(members.map((p) => p.id));
+    const reached = members.filter((p) => realKudos.some((k) => k.toId === p.id)).length;
+    const inboundKudos = realKudos.filter(
+      (k) => memberIds.has(k.toId) && !memberIds.has(k.fromId),
+    );
+    const senderCounts = new Map<PersonId, number>();
+    for (const k of inboundKudos) senderCounts.set(k.fromId, (senderCounts.get(k.fromId) ?? 0) + 1);
+    const top = [...senderCounts.entries()].sort((a, b) => b[1] - a[1])[0];
+    return {
+      office,
+      headcount: members.length,
+      reached,
+      ratio: members.length > 0 ? reached / members.length : 0,
+      inbound: inboundKudos.length,
+      outbound: realKudos.filter((k) => memberIds.has(k.fromId) && !memberIds.has(k.toId)).length,
+      topInboundSender: top ? { person: personById(top[0]), count: top[1] } : null,
+    };
+  });
+  const totalCrossings = realKudos.filter((k) => officeOf(k.fromId) !== officeOf(k.toId)).length;
+  const worst =
+    officeReach.length > 1
+      ? [...officeReach].sort((a, b) => a.ratio - b.ratio)[0]
+      : null;
+
   return {
     mostReliedOn,
     connector,
@@ -256,6 +306,7 @@ function computeInsights(people: Person[], teams: Team[], kudos: Kudo[]): GraphI
     singleSource: { count: singleSourcePeople.length, groups: groupByManager(singleSourcePeople) },
     fragileBridges: { count: fragileCount, totalConnectedPairs, example: fragileExample },
     strongestBond,
+    crossOffice: { totalCrossings, offices: officeReach, worst },
   };
 }
 
@@ -332,5 +383,5 @@ export function buildKudosGraph({
     color: a.color,
   }));
 
-  return { nodes, links, insights: computeInsights(people, teams, kudos) };
+  return { nodes, links, insights: computeInsights(people, teams, kudos, offices) };
 }

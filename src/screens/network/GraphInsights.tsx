@@ -104,6 +104,50 @@ export function GraphInsights({ insights, teams }: { insights: GraphInsightsData
       <div className="flex gap-4 overflow-x-auto">
         <Column width="40%">
           <Section tone="attention" title="Needs attention" sub="worth a message this week">
+          {insights.crossOffice.worst && insights.crossOffice.offices.length > 1 && (
+            <InsightCard
+              title={`Recognition is not reaching ${insights.crossOffice.worst.office.name}`}
+              stat={percent(insights.crossOffice.worst.ratio)}
+              tone="attention"
+            >
+              <b className="text-ink">
+                {insights.crossOffice.worst.reached} of {insights.crossOffice.worst.headcount}
+              </b>{' '}
+              people in {insights.crossOffice.worst.office.name} have been thanked by anyone in the
+              last 90 days.{' '}
+              <b className="text-ink">{insights.crossOffice.worst.inbound}</b> of those thank-yous
+              came from another office
+              {insights.crossOffice.worst.topInboundSender &&
+                insights.crossOffice.worst.topInboundSender.count > 1 && (
+                  <>
+                    , and{' '}
+                    <b className="text-ink">
+                      {insights.crossOffice.worst.topInboundSender.count} of them
+                    </b>{' '}
+                    came from {insights.crossOffice.worst.topInboundSender.person.name} alone
+                  </>
+                )}
+              .
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {insights.crossOffice.offices.map((o) => (
+                  <span
+                    key={o.office.id}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-2 py-0.5 text-[11px]"
+                  >
+                    <span
+                      className="inline-block h-2 w-2 rounded-full"
+                      style={{ background: o.office.color }}
+                    />
+                    <b>{o.office.name}</b>
+                    <span className="tabular-nums text-muted">
+                      {percent(o.ratio)} reached . {o.outbound} sent out . {o.inbound} received in
+                    </span>
+                  </span>
+                ))}
+              </div>
+            </InsightCard>
+          )}
+
             <InsightCard title="Not reached" stat={String(insights.unreached.count)} tone="attention">
               No one has recognized them in the last 90 days — a gap in the org's reach, not a reflection on
               them.
