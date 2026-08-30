@@ -90,8 +90,15 @@ export function computePersonDirectory(people: Person[], _teams: Team[], kudos: 
   return people
     .map((person) => {
       const edges = buildEdges(person.id, people, kudos);
-      const receivedCents = edges.reduce((sum, e) => sum + (e.direction !== 'given' ? e.totalCents : 0), 0);
-      const givenCents = edges.reduce((sum, e) => sum + (e.direction !== 'received' ? e.totalCents : 0), 0);
+      // Summed straight from kudos, not from `edges` — an edge's totalCents is the
+      // *combined* two-way value with that colleague, so a mutual ('both') edge
+      // would otherwise get double-counted into both receivedCents and givenCents.
+      const receivedCents = kudos
+        .filter((k) => k.toId === person.id && k.fromId !== person.id)
+        .reduce((sum, k) => sum + k.amountCents, 0);
+      const givenCents = kudos
+        .filter((k) => k.fromId === person.id && k.toId !== person.id)
+        .reduce((sum, k) => sum + k.amountCents, 0);
       const own = kudos.filter((k) => k.fromId === person.id || k.toId === person.id);
       const lastExchangeAt = own.length
         ? own.reduce((latest, k) => (k.sentAt > latest ? k.sentAt : latest), own[0].sentAt)

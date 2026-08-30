@@ -50,7 +50,10 @@ export function computeMemberStats(personId: PersonId, people: Person[], kudos: 
   const unclaimedCents = unclaimed.reduce((sum, k) => sum + k.amountCents, 0);
   const claimedCents = receivedCents - unclaimedCents;
 
-  const usageRatio = givenCents / ANNUAL_ALLOWANCE_CENTS;
+  // Capped at 100% — the send flow (see employee/Send.tsx) never lets anyone commit
+  // more than their allowance, so a ratio above 1 here would only be an artifact of
+  // stale seed data, not something that can happen through the app itself.
+  const usageRatio = Math.min(1, givenCents / ANNUAL_ALLOWANCE_CENTS);
   const pace = fiscalYearProgress();
 
   const lastGivenAt = given.length
@@ -92,7 +95,7 @@ export function computeTeamStats(people: Person[], teams: Team[], kudos: Kudo[])
       const memberStats = members.map((p) => computeMemberStats(p.id, people, kudos));
       const givenCents = memberStats.reduce((sum, m) => sum + m.givenCents, 0);
       const allowanceCents = members.length * ANNUAL_ALLOWANCE_CENTS;
-      const usageRatio = allowanceCents > 0 ? givenCents / allowanceCents : 0;
+      const usageRatio = allowanceCents > 0 ? Math.min(1, givenCents / allowanceCents) : 0;
       const membersWithBudgetLeft = memberStats.filter((m) => m.usageRatio < 1).length;
 
       return {
@@ -122,7 +125,7 @@ export function computeCompanyStats(people: Person[], kudos: Kudo[]): CompanySta
     headcount: people.length,
     givenCents,
     allowanceCents: people.length * ANNUAL_ALLOWANCE_CENTS,
-    usageRatio: givenCents / (people.length * ANNUAL_ALLOWANCE_CENTS),
+    usageRatio: Math.min(1, givenCents / (people.length * ANNUAL_ALLOWANCE_CENTS)),
     paceRatio: fiscalYearProgress(),
     participantCount: givers.size,
     receivedCents,
