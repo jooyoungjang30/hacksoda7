@@ -126,7 +126,7 @@ export function ReportingLine({
         </g>
 
         <g>
-          <rect x={CENTER.x - 47} y={CENTER.y - 22} width={94} height={44} rx={11} fill="#5B21B6" />
+          <rect x={CENTER.x - 47} y={CENTER.y - 22} width={94} height={44} rx={11} fill={teamColor(person.teamId)} />
           <circle cx={CENTER.x - 25} cy={CENTER.y} r={13} fill="#fff" opacity={0.22} />
           <text
             x={CENTER.x - 25}
