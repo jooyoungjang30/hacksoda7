@@ -1,5 +1,7 @@
 import { daysUntil, fiscalYearProgress } from './clock';
 import type {
+  Office,
+  OfficeCoverage,
   CompanyStats,
   Kudo,
   LeaderboardRow,
@@ -108,7 +110,11 @@ export function computeTeamStats(people: Person[], teams: Team[], kudos: Kudo[])
     .sort((a, b) => a.usageRatio - b.usageRatio);
 }
 
-export function computeCompanyStats(people: Person[], kudos: Kudo[]): CompanyStats {
+export function computeCompanyStats(
+  people: Person[],
+  kudos: Kudo[],
+  offices: Office[] = [],
+): CompanyStats {
   const givenCents = kudos.reduce((sum, k) => sum + k.amountCents, 0);
   const receivedCents = givenCents; // closed system — every given kudo is received by someone in the array
   const unclaimed = kudos.filter((k) => k.claimedAt === null);
@@ -116,6 +122,22 @@ export function computeCompanyStats(people: Person[], kudos: Kudo[]): CompanySta
   const claimedCents = receivedCents - unclaimedCents;
 
   const givers = new Set(kudos.map((k) => k.fromId));
+  const reached = new Set(kudos.map((k) => k.toId));
+  const officeOf = new Map(people.map((p) => [p.id, p.officeId]));
+
+  const byOffice: OfficeCoverage[] = offices.map((office) => {
+    const members = people.filter((p) => p.officeId === office.id);
+    const hit = members.filter((p) => reached.has(p.id)).length;
+    return {
+      office,
+      headcount: members.length,
+      reachedCount: hit,
+      ratio: members.length > 0 ? hit / members.length : 0,
+      inboundFromElsewhere: kudos.filter(
+        (k) => officeOf.get(k.toId) === office.id && officeOf.get(k.fromId) !== office.id,
+      ).length,
+    };
+  });
   const expiringSoon = unclaimed.filter((k) => daysUntil(k.expiresAt) <= EXPIRING_SOON_DAYS);
 
   return {
@@ -131,6 +153,9 @@ export function computeCompanyStats(people: Person[], kudos: Kudo[]): CompanySta
     openCount: unclaimed.length,
     expiringSoonCents: expiringSoon.reduce((sum, k) => sum + k.amountCents, 0),
     expiringSoonCount: expiringSoon.length,
+    reachedCount: reached.size,
+    coverageRatio: people.length > 0 ? reached.size / people.length : 0,
+    byOffice: byOffice.sort((a, b) => b.headcount - a.headcount),
   };
 }
 

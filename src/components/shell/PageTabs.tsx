@@ -2,7 +2,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 
 const TABS = [
   { to: '/kudos', label: 'Dashboard', match: (path: string) => !path.startsWith('/kudos/network') && !path.startsWith('/kudos/relationships') },
-  { to: '/kudos/network', label: 'Network Map', match: (path: string) => path.startsWith('/kudos/network') },
+  { to: '/kudos/network', label: 'Connection Map', match: (path: string) => path.startsWith('/kudos/network') },
   { to: '/kudos/relationships', label: 'Relationships', match: (path: string) => path.startsWith('/kudos/relationships') },
 ];
 

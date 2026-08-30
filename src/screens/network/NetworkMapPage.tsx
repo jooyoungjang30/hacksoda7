@@ -11,14 +11,14 @@ import { GraphInsights } from './GraphInsights';
 import type { TeamId } from '../../lib/types';
 
 export function NetworkMapPage() {
-  const { people, teams, kudos, loading } = useHrDataset();
+  const { people, teams, offices, kudos, loading } = useHrDataset();
   const navigate = useNavigate();
   const [teamFilter, setTeamFilter] = useState<TeamId | 'all'>('all');
   const [crossTeamOnly, setCrossTeamOnly] = useState(false);
 
   if (loading) return <AppShell><PageHeader title="Kudos Gift Tracker" /><PageTabs /></AppShell>;
 
-  const { nodes, links, insights } = buildKudosGraph({ people, teams, kudos, crossTeamOnly, teamFilter });
+  const { nodes, links, insights } = buildKudosGraph({ people, teams, offices, kudos, crossTeamOnly, teamFilter });
 
   return (
     <AppShell>

@@ -26,8 +26,8 @@ export function Sidebar() {
       </div>
       <hr className="mx-5 mb-4 border-white/16" />
       <div className="mx-[18px] mb-5 rounded-lg border border-white/28 px-[13px] py-[11px]">
-        <b className="block text-sm font-semibold">Lumen Labs</b>
-        <span className="text-xs opacity-78">47 employees · FY2026</span>
+        <b className="block text-sm font-semibold">Vega</b>
+        <span className="text-xs opacity-78">200 employees · FY2026</span>
       </div>
       <nav>
         {NAV_ITEMS.map((item) => (

@@ -12,8 +12,8 @@ import { Leaderboard } from './Leaderboard';
 import { ClaimTrackingTable } from './ClaimTrackingTable';
 
 export function DashboardPage() {
-  const { people, teams: teamList, kudos, loading } = useHrDataset();
-  const company = useCompanyStats(people, kudos);
+  const { people, teams: teamList, offices, kudos, loading } = useHrDataset();
+  const company = useCompanyStats(people, kudos, offices);
   const teams = useTeamStats(people, teamList, kudos);
   const leaderboard = useLeaderboard(people, teamList, kudos, 7);
   const claimByTeam = useClaimByTeam(people, teamList, kudos);

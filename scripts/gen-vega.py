@@ -164,8 +164,12 @@ for i in tokyo_ids:
     if by_id[i]['manager'] is None and i != tokyo_lead:
         by_id[i]['manager'] = tokyo_lead
 by_id[AYA]['manager'] = tokyo_lead
+# Team leads keep managerId null — useKudosGraph's managerOfTeam() finds the
+# lead of a team by exactly that, and asserts non-null. A lead pointing at
+# itself leaves seven teams with no lead and crashes the insights page.
+lead_ids = set(leads.values())
 for p in people:
-    if p['manager'] is None and p['id'] not in (MGR,):
+    if p['manager'] is None and p['id'] not in lead_ids and p['id'] != MGR:
         p['manager'] = leads.get(p['team'])
 by_id[MGR]['manager'] = None
 

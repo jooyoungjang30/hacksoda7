@@ -1,5 +1,5 @@
 import { TODAY } from '../lib/clock';
-import type { Kudo, Person, PersonId, Team, TeamId } from '../lib/types';
+import type { Kudo, Person, PersonId, Team, TeamId , Office } from '../lib/types';
 
 const DORMANT_DAYS = 90;
 const DORMANT_COLOR = '#B9AECF';
@@ -8,6 +8,7 @@ export interface GraphNode {
   id: PersonId;
   name: string;
   teamId: TeamId;
+  officeId: string;
   color: string;
   r: number;
   receivedCents: number;
@@ -266,14 +267,17 @@ export function buildKudosGraph({
   kudos,
   crossTeamOnly,
   teamFilter,
+  offices,
 }: {
   people: Person[];
   teams: Team[];
   kudos: Kudo[];
   crossTeamOnly: boolean;
   teamFilter: TeamId | 'all';
+  offices: Office[];
 }) {
   const teamById = (teamId: TeamId): Team => teams.find((t) => t.id === teamId)!;
+  const officeById = (id: string): Office | undefined => offices.find((o) => o.id === id);
 
   function isDormant(personId: PersonId): boolean {
     const cutoff = TODAY.getTime() - DORMANT_DAYS * 24 * 60 * 60 * 1000;
@@ -292,7 +296,10 @@ export function buildKudosGraph({
       id: person.id,
       name: person.name.split(' ')[0],
       teamId: person.teamId,
-      color: dormant ? DORMANT_COLOR : teamById(person.teamId).color,
+      officeId: person.officeId,
+      // Colour is the office, not the team: the demo's whole point is that the
+      // gap runs along the office line, and that has to be visible at a glance.
+      color: dormant ? DORMANT_COLOR : (officeById(person.officeId)?.color ?? teamById(person.teamId).color),
       r: clamp(3 + Math.sqrt(receivedCents / 100) * 0.5, 3, 9),
       receivedCents,
       isDormant: dormant,

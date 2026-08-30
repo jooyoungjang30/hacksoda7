@@ -114,6 +114,21 @@ export interface CompanyStats {
   openCount: number;
   expiringSoonCents: number; // unclaimed, expires <= 30d
   expiringSoonCount: number;
+  /** Coverage — how many people were reached at all. Every other tool in this
+   *  category reports participation (who gave); this is the other side of it,
+   *  and it is the metric the whole product argument rests on. */
+  reachedCount: number;
+  coverageRatio: number;
+  byOffice: OfficeCoverage[];
+}
+
+export interface OfficeCoverage {
+  office: Office;
+  headcount: number;
+  reachedCount: number;
+  ratio: number;
+  /** Kudos that arrived from a different office. "It came back four times." */
+  inboundFromElsewhere: number;
 }
 
 // --- Relationships tab (single-person view of the same kudos records) ---
