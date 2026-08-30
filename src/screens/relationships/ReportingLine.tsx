@@ -21,7 +21,7 @@ function point(radius: number, angleDeg: number): { x: number; y: number } {
   return { x: CENTER.x + radius * Math.sin(rad), y: CENTER.y - radius * Math.cos(rad) };
 }
 
-/** The unit that actually exists at Lumen Labs — one manager, one team, no deeper
+/** The unit that actually exists at Vega — one manager, one team, no deeper
  * hierarchy — so this draws that unit rather than a tree with nothing to nest.
  * Link weight (width + opacity) is the combined two-way kudos value on that edge. */
 export function ReportingLine({

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { claimKudos, getEmployees, getReceived } from '../lib/queries'
 import { usd, type Employee, type KudosRow } from '../lib/supabase'
 import { resolveCurrentUser } from '../lib/currentUser'
-import { daysUntil } from '../lib/clock'
+import { daysUntil, FISCAL_YEAR } from '../lib/clock'
 import { shortDate } from '../lib/format'
 import { useToast } from '../components/ui/Toast'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
@@ -93,7 +93,7 @@ export default function Received() {
         <div className="card-h">
           <h3>All kudos received</h3>
           <span className="sp" style={{ display: 'flex', gap: 8 }}>
-            <span className="btn sm" style={{ opacity: .6, pointerEvents: 'none' }}>FY2026</span>
+            <span className="btn sm" style={{ opacity: .6, pointerEvents: 'none' }}>FY{FISCAL_YEAR}</span>
             <select
               className="field"
               style={{ width: 'auto', padding: '5px 9px', fontSize: 11.5 }}

@@ -11,7 +11,7 @@ import { StatCard } from '../../components/ui/StatCard';
 import { shortDate } from '../../lib/format';
 import { useHrDataset } from '../../hooks/useHrDataset';
 import { usePersonDetail } from '../../hooks/useRelationships';
-import { FLAG_LABEL, FLAG_TONE } from './flag';
+import { actionReason, FLAG_LABEL, FLAG_TONE } from './flag';
 import { PersonSearch } from './PersonSearch';
 import { ReportingLine } from './ReportingLine';
 
@@ -101,9 +101,11 @@ export function PersonDetailPage() {
                 <div className="flex items-start gap-2.5">
                   <Avatar initials={manager.initials} color={teamColor} />
                   <div className="text-[12px] leading-relaxed">
-                    <b className="block text-[12.5px]">{manager.name} hasn't recognised {person.name.split(' ')[0]} in the last 90 days</b>
+                    <b className="block text-[12.5px]">
+                      {person.name.split(' ')[0]}'s manager, {manager.name}, hasn't recognised {person.name.split(' ')[0]} in the last 90 days
+                    </b>
                     <span className="text-muted">
-                      At least two other colleagues have recently. This is the manager-gap pattern the Network
+                      At least two other colleagues have recently. This is the manager-gap pattern the Connection
                       Map counts — here it's one specific pair.
                     </span>
                   </div>
@@ -134,7 +136,8 @@ export function PersonDetailPage() {
                   <div className="mt-2.5 flex flex-col gap-1 border-t border-line pt-2.5">
                     <div className="text-[10px] font-semibold tracking-wider text-warn uppercase">Action items</div>
                     <div className="text-[12px] leading-relaxed text-ink">
-                      Reach out to <b>{manager.name}</b> to recognise {person.name.split(' ')[0]}.
+                      Reach out to {person.name.split(' ')[0]}'s manager, <b>{manager.name}</b>, to{' '}
+                      {actionReason(flag, person.name.split(' ')[0])}.
                     </div>
                     <div className="mt-1">
                       <NudgeButton
