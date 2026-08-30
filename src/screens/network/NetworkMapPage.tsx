@@ -77,36 +77,61 @@ export function NetworkMapPage() {
             </Card>
 
             <Card className="p-4">
-              <div className="mb-3 text-[10.5px] font-semibold tracking-wider text-muted uppercase">Legend</div>
+              <div className="mb-3 text-[10.5px] font-semibold tracking-wider text-muted uppercase">
+                Legend
+                {!groupByOffice && (
+                  <span className="normal-case text-muted/70"> · click a team to filter the map</span>
+                )}
+              </div>
               {/* The legend names whatever the colours currently mean. Grouped by
-                  office, that is the two sites; otherwise it is the teams. */}
-              <div className="grid grid-cols-2 gap-x-5 gap-y-1.5 text-xs">
-                {groupByOffice
-                  ? offices.map((o) => (
-                      <div key={o.id} className="flex items-center gap-2">
-                        <i
-                          className="h-2.5 w-2.5 flex-none rounded-full"
-                          style={{ background: o.color }}
-                        />
-                        <b>{o.name}</b>
-                        <span className="text-muted">{o.country}</span>
-                        <span className="ml-auto text-muted tabular-nums">
-                          {people.filter((p) => p.officeId === o.id).length}
-                        </span>
-                      </div>
-                    ))
-                  : teams.map((t) => (
-                      <div key={t.id} className="flex items-center gap-2">
-                        <i
-                          className="h-2.5 w-2.5 flex-none rounded-full"
-                          style={{ background: t.color }}
-                        />
+                  office that is the two sites — not clickable, since the map filters
+                  by team; otherwise it is the teams, which do filter. */}
+              <div className="grid grid-cols-2 gap-x-5 gap-y-1 text-xs">
+                {groupByOffice ? (
+                  offices.map((o) => (
+                    <div key={o.id} className="flex items-center gap-2 px-1.5 py-1">
+                      <i
+                        className="h-2.5 w-2.5 flex-none rounded-full"
+                        style={{ background: o.color }}
+                      />
+                      <b>{o.name}</b>
+                      <span className="text-muted">{o.country}</span>
+                      <span className="ml-auto text-muted tabular-nums">
+                        {people.filter((p) => p.officeId === o.id).length}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setTeamFilter('all')}
+                      className={`flex items-center gap-2 rounded-md px-1.5 py-1 text-left ${
+                        teamFilter === 'all' ? 'bg-brand-soft text-brand' : 'hover:bg-surface'
+                      }`}
+                    >
+                      <i className="h-2.5 w-2.5 flex-none rounded-full bg-ink" />
+                      All
+                      <span className="ml-auto text-muted tabular-nums">{people.length}</span>
+                    </button>
+                    {teams.map((t) => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => setTeamFilter(t.id)}
+                        className={`flex items-center gap-2 rounded-md px-1.5 py-1 text-left ${
+                          teamFilter === t.id ? 'bg-brand-soft text-brand' : 'hover:bg-surface'
+                        }`}
+                      >
+                        <i className="h-2.5 w-2.5 flex-none rounded-full" style={{ background: t.color }} />
                         {t.name}
                         <span className="ml-auto text-muted tabular-nums">
                           {people.filter((p) => p.teamId === t.id).length}
                         </span>
-                      </div>
+                      </button>
                     ))}
+                  </>
+                )}
               </div>
               <div className="mt-3.5 flex flex-col gap-1 border-t border-line pt-3 text-[11px] text-muted">
                 <div className="flex items-center gap-2">
@@ -126,7 +151,7 @@ export function NetworkMapPage() {
             </Card>
           </div>
 
-          <GraphInsights insights={insights} teams={teams} />
+          <GraphInsights insights={insights} />
         </div>
       </div>
     </AppShell>

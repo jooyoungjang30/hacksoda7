@@ -60,13 +60,26 @@ function officeCentroids(
 function teamCentroids(width: number, height: number): Record<TeamId, { x: number; y: number }> {
   const cx = width / 2;
   const cy = height / 2;
-  const radius = Math.min(width, height) * 0.32;
+  const radius = Math.min(width, height) * 0.44;
   const centroids = {} as Record<TeamId, { x: number; y: number }>;
   TEAM_ORDER.forEach((id, i) => {
     const angle = -Math.PI / 2 + (i * 2 * Math.PI) / TEAM_ORDER.length;
     centroids[id] = { x: cx + radius * Math.cos(angle), y: cy + radius * Math.sin(angle) };
   });
   return centroids;
+}
+
+type SimLink = { source: PositionedNode; target: PositionedNode };
+
+/** Links inside a cluster pull hard (this is what makes it cohere); links that
+ * cross pull just enough to keep the graph connected, so 800+ crossing edges
+ * don't drag every cluster back into one blob. Which boundary counts depends on
+ * how the map is currently grouped. */
+function sameGroupStrength(l: SimLink, byOffice: boolean): number {
+  const same = byOffice
+    ? l.source.officeId === l.target.officeId
+    : l.source.teamId === l.target.teamId;
+  return same ? 0.55 : 0.04;
 }
 
 export function prefersReducedMotion(): boolean {
@@ -101,12 +114,12 @@ export function useForceLayout(
       ? {
           x: (d: PositionedNode) => officesXY[d.officeId]?.x ?? width / 2,
           y: (d: PositionedNode) => officesXY[d.officeId]?.y ?? height / 2,
-          strength: 0.34,
+          strength: 0.46,
         }
       : {
           x: (d: PositionedNode) => teams[d.teamId]?.x ?? width / 2,
           y: (d: PositionedNode) => teams[d.teamId]?.y ?? height / 2,
-          strength: 0.12,
+          strength: 0.36,
         };
   })();
 
@@ -130,11 +143,11 @@ export function useForceLayout(
         'link',
         forceLink(linkCopies)
           .id((d) => (d as PositionedNode).id)
-          .distance(60)
-          .strength(0.35),
+          .distance(100)
+          .strength((l) => sameGroupStrength(l as SimLink, clusterBy === 'office')),
       )
-      .force('charge', forceManyBody().strength(-180))
-      .force('collide', forceCollide((d) => (d as PositionedNode).r + 9))
+      .force('charge', forceManyBody().strength(-300))
+      .force('collide', forceCollide((d) => (d as PositionedNode).r + 14))
       .force('x', forceX<PositionedNode>(anchor.x).strength(anchor.strength))
       .force('y', forceY<PositionedNode>(anchor.y).strength(anchor.strength))
       .stop()
@@ -169,11 +182,11 @@ export function useForceLayout(
         'link',
         forceLink(positionedLinks as never[])
           .id((d) => (d as PositionedNode).id)
-          .distance(60)
-          .strength(0.35),
+          .distance(100)
+          .strength((l) => sameGroupStrength(l as SimLink, clusterBy === 'office')),
       )
-      .force('charge', forceManyBody().strength(-180))
-      .force('collide', forceCollide((d) => (d as PositionedNode).r + 9))
+      .force('charge', forceManyBody().strength(-300))
+      .force('collide', forceCollide((d) => (d as PositionedNode).r + 14))
       .force('x', forceX<PositionedNode>(anchor.x).strength(anchor.strength))
       .force('y', forceY<PositionedNode>(anchor.y).strength(anchor.strength))
       .alpha(0.9)

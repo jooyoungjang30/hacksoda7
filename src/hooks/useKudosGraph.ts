@@ -362,7 +362,7 @@ export function buildKudosGraph({
       officeColor: dormant
         ? DORMANT_COLOR
         : (officeById(person.officeId)?.color ?? teamById(person.teamId).color),
-      r: clamp(4 + Math.sqrt(receivedCents / 100) * 0.62, 4, 13),
+      r: clamp(5 + Math.sqrt(receivedCents / 100) * 0.7, 5, 13),
       receivedCents,
       isDormant: dormant,
     };

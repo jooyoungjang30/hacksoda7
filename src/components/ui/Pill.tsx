@@ -11,10 +11,10 @@ const TONE_CLASSES: Record<PillTone, string> = {
   brand: 'bg-brand-soft text-brand',
 };
 
-export function Pill({ tone, children }: { tone: PillTone; children: ReactNode }) {
+export function Pill({ tone, children, className = '' }: { tone: PillTone; children: ReactNode; className?: string }) {
   return (
     <span
-      className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-[10.5px] font-semibold tracking-wide ${TONE_CLASSES[tone]}`}
+      className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-[10.5px] font-semibold tracking-wide ${TONE_CLASSES[tone]} ${className}`}
     >
       {children}
     </span>

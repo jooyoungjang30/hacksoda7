@@ -1,9 +1,9 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card } from '../../components/ui/Card';
 import { Pill, type PillTone } from '../../components/ui/Pill';
 import { money, percent } from '../../lib/format';
 import type { GraphInsights as GraphInsightsData, ManagerActionGroup } from '../../hooks/useKudosGraph';
-import type { Team } from '../../lib/types';
 
 type Tone = 'attention' | 'neutral' | 'good';
 
@@ -13,21 +13,46 @@ const TONE: Record<Tone, { pill: PillTone; card: string; stripe: string }> = {
   good: { pill: 'good', card: 'bg-good-bg', stripe: 'border-good' },
 };
 
-/** One manager-per-line reach-out list — the concrete "who do I message" checklist
- * an HR head acts on, distinct in style from the descriptive text above it. */
-function ActionList({ groups, teams }: { groups: ManagerActionGroup[]; teams: Team[] }) {
-  if (groups.length === 0) return null;
-  const teamName = (teamId: string) => teams.find((t) => t.id === teamId)?.name ?? teamId;
+const COLLAPSED_COUNT = 4;
+
+/** Pills for the flagged individuals behind this card — the concrete "who" list
+ * an HR head can act on. Clicking a person opens their page in Relationships,
+ * where the manager reach-out action items now live. Collapsed to a handful by
+ * default since some cohorts (e.g. "Not reached") run past a dozen people. */
+function ActionList({ groups, onPersonClick }: { groups: ManagerActionGroup[]; onPersonClick: (personId: string) => void }) {
+  const [expanded, setExpanded] = useState(false);
+  const flagged = groups.flatMap((g) => g.people);
+  if (flagged.length === 0) return null;
+  const visible = expanded ? flagged : flagged.slice(0, COLLAPSED_COUNT);
+  const hiddenCount = flagged.length - visible.length;
   return (
-    <div className="mt-2.5 flex flex-col gap-1.5 border-t border-warn/25 pt-2.5">
-      <div className="text-[10px] font-semibold tracking-wider text-warn uppercase">Action</div>
-      {groups.map((g) => (
-        <div key={g.manager.id} className="text-[12px] leading-relaxed text-ink">
-          . Reach out to <b>{g.manager.name}</b>{' '}
-          <span className="text-muted">({teamName(g.manager.teamId)} manager)</span> about{' '}
-          {g.people.map((p) => p.name).join(', ')}.
-        </div>
+    <div className="mt-2.5 flex flex-wrap items-center gap-1.5 border-t border-warn/25 pt-2.5">
+      <div className="w-full text-[10px] font-semibold tracking-wider text-warn uppercase">Flagged</div>
+      {visible.map((p) => (
+        <button key={p.id} type="button" onClick={() => onPersonClick(p.id)} className="cursor-pointer">
+          <Pill tone="warn" className="border border-warn/40">
+            {p.name}
+          </Pill>
+        </button>
       ))}
+      {hiddenCount > 0 && (
+        <button
+          type="button"
+          onClick={() => setExpanded(true)}
+          className="text-[11px] font-semibold text-warn hover:underline"
+        >
+          See {hiddenCount} more
+        </button>
+      )}
+      {expanded && flagged.length > COLLAPSED_COUNT && (
+        <button
+          type="button"
+          onClick={() => setExpanded(false)}
+          className="text-[11px] font-semibold text-muted hover:underline"
+        >
+          Show less
+        </button>
+      )}
     </div>
   );
 }
@@ -77,22 +102,18 @@ function Section({
   );
 }
 
-/** One trello-style column. Columns scroll horizontally as a group (see the
- * `overflow-x-auto` wrapper below) rather than squeezing cards unreadably
- * narrow on smaller screens. `width` sets each column's share of the board:
- * Needs attention gets more room since it carries the most cards. */
-function Column({ width, children }: { width: '40%' | '30%'; children: ReactNode }) {
-  const widthClass = width === '40%' ? 'w-[40%]' : 'w-[30%]';
-  return (
-    <div className={`min-w-[230px] shrink-0 ${widthClass} rounded-lg border border-line/60 bg-surface/60 p-3`}>
-      {children}
-    </div>
-  );
+/** One trello-style column. Grid tracks (not flex + overflow-x-auto) so the
+ * board always fits the card's actual width — columns wrap their content
+ * instead of clipping it off past a horizontal scrollbar. */
+function Column({ children }: { children: ReactNode }) {
+  return <div className="min-w-0 rounded-lg border border-line/60 bg-surface/60 p-3">{children}</div>;
 }
 
-export function GraphInsights({ insights, teams }: { insights: GraphInsightsData; teams: Team[] }) {
+export function GraphInsights({ insights }: { insights: GraphInsightsData }) {
+  const navigate = useNavigate();
+  const onPersonClick = (personId: string) => navigate(`/kudos/relationships/${personId}`);
   return (
-    <Card className="p-5">
+    <Card className="min-w-0 p-5">
       <div className="mb-4">
         <div className="text-[10.5px] font-semibold tracking-wider text-brand uppercase">HR Insights</div>
         <h2 className="mt-1 text-[17px] font-semibold">What this map means for the team</h2>
@@ -101,8 +122,8 @@ export function GraphInsights({ insights, teams }: { insights: GraphInsightsData
         </p>
       </div>
 
-      <div className="flex gap-4 overflow-x-auto">
-        <Column width="40%">
+      <div className="grid grid-cols-[2fr_1.4fr_1.4fr] gap-4">
+        <Column>
           <Section tone="attention" title="Needs attention" sub="worth a message this week">
           {insights.crossOffice.worst && insights.crossOffice.offices.length > 1 && (
             <InsightCard
@@ -151,7 +172,7 @@ export function GraphInsights({ insights, teams }: { insights: GraphInsightsData
             <InsightCard title="Not reached" stat={String(insights.unreached.count)} tone="attention">
               No one has recognized them in the last 90 days — a gap in the org's reach, not a reflection on
               them.
-              <ActionList groups={insights.unreached.groups} teams={teams} />
+              <ActionList groups={insights.unreached.groups} onPersonClick={onPersonClick} />
             </InsightCard>
 
             {insights.managerGap.example && (
@@ -159,7 +180,7 @@ export function GraphInsights({ insights, teams }: { insights: GraphInsightsData
                 {insights.managerGap.example.peerGivers} peers recognize {insights.managerGap.example.person.name},
                 but {insights.managerGap.example.manager.name} hasn't in 90 days — a manager conversation, not an
                 employee one.
-                <ActionList groups={insights.managerGap.groups} teams={teams} />
+                <ActionList groups={insights.managerGap.groups} onPersonClick={onPersonClick} />
               </InsightCard>
             )}
 
@@ -174,13 +195,13 @@ export function GraphInsights({ insights, teams }: { insights: GraphInsightsData
             <InsightCard title="Recognized, but not giving back" stat={String(insights.receiveOnly.count)} tone="attention">
               Received kudos at least once but has never given any — recognized, but not yet part of the culture
               of thanking others.
-              <ActionList groups={insights.receiveOnly.groups} teams={teams} />
+              <ActionList groups={insights.receiveOnly.groups} onPersonClick={onPersonClick} />
             </InsightCard>
 
             <InsightCard title="One relationship away from nothing" stat={String(insights.singleSource.count)} tone="attention">
               Everything they've received came from a single colleague. If that relationship lapses, their
               recognition drops to zero overnight.
-              <ActionList groups={insights.singleSource.groups} teams={teams} />
+              <ActionList groups={insights.singleSource.groups} onPersonClick={onPersonClick} />
             </InsightCard>
 
             <InsightCard
@@ -227,7 +248,7 @@ export function GraphInsights({ insights, teams }: { insights: GraphInsightsData
           </Section>
         </Column>
 
-        <Column width="30%">
+        <Column>
           <Section tone="neutral" title="Worth knowing" sub="context, no action needed">
             <InsightCard title="Cross-team collaboration" stat={percent(insights.crossTeamRatio)} tone="neutral">
               Of all kudos exchanged company-wide, {percent(insights.crossTeamRatio)} cross a team boundary.
@@ -239,7 +260,7 @@ export function GraphInsights({ insights, teams }: { insights: GraphInsightsData
           </Section>
         </Column>
 
-        <Column width="30%">
+        <Column>
           <Section tone="good" title="Going well" sub="worth recognizing">
             <InsightCard
               title="Most relied on"

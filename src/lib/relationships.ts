@@ -69,7 +69,7 @@ function computeFlag(person: Person, edges: RelationshipEdge[], people: Person[]
   const received = kudos.some((k) => k.toId === person.id);
   const givers = new Set(kudos.filter((k) => k.toId === person.id && k.fromId !== person.id).map((k) => k.fromId));
 
-  if (received && !hasRecentRecognition(person.id, kudos)) return 'unreached';
+  if (!hasRecentRecognition(person.id, kudos)) return 'unreached';
   if (givers.size === 1) return 'single_source';
   if (received && !gave) return 'receive_only';
 
