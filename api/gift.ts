@@ -25,7 +25,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!k) return res.status(404).json({ error: 'no such kudos' })
 
     const { data: card } = await db.from('gift_cards')
-      .select('soda_product_id, brand').eq('id', k.gift_card_id).single()
+      .select('soda_product_id, soda_custom_amount, brand').eq('id', k.gift_card_id).single()
     if (!card?.soda_product_id)
       return res.status(200).json({ skipped: `${card?.brand ?? k.gift_card_id} has no soda_product_id` })
 
@@ -42,7 +42,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         'content-type': 'application/json',
       },
       body: JSON.stringify({
-        item: { id: card.soda_product_id },
+        // GB products take a custom_amount; a few (Deliveroo) are fixed price.
+        // Amount is sent as GBP — the app's balance is USD, which is the spec's
+        // own open question D, deliberately not solved for the demo.
+        item: card.soda_custom_amount === false
+          ? { id: card.soda_product_id }
+          : { id: card.soda_product_id, custom_amount: k.amount_cents / 100 },
         delivery: {
           method: 'EMAIL',
           recipient: { name: to?.name ?? 'Colleague', email },

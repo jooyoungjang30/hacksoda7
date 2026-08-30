@@ -7,4 +7,4 @@ alter table kudos      add column if not exists soda_status   text;
 
 -- Every gift in the demo is delivered to you, so the card actually arrives on
 -- stage. Replace with your own address before running.
-update employees set email = 'YOUR-EMAIL@example.com';
+update employees set email = 'jwpark97114@gmail.com';
