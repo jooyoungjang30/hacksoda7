@@ -22,6 +22,13 @@ export type GiftCard = {
   id: string; brand: string; country: string
   min_cents: number; max_cents: number; swatch: string; glyph: string
   image_url?: string | null
+  /** false when SodaGift sells this card at one fixed price — most US and JP
+   *  products are. min_cents is then that price, in USD cents. */
+  soda_custom_amount?: boolean | null
+  currency?: string | null
+  /** Price in the card's own currency, for display: "¥2,000" reads as a real
+   *  Japanese gift card in a way "$13" does not. */
+  native_amount?: number | null
 }
 export type KudosRow = {
   id: number; sender_id: string; recipient_id: string; gift_card_id: string
