@@ -17,13 +17,13 @@ export function NetworkMapPage() {
   const [crossTeamOnly, setCrossTeamOnly] = useState(false);
   const [groupByOffice, setGroupByOffice] = useState(false);
 
-  if (loading) return <AppShell><PageHeader title="Kudos Gift Tracker" /><PageTabs /></AppShell>;
+  if (loading) return <AppShell><PageHeader title="Belong" /><PageTabs /></AppShell>;
 
   const { nodes, links, insights } = buildKudosGraph({ people, teams, offices, kudos, crossTeamOnly, teamFilter });
 
   return (
     <AppShell>
-      <PageHeader title="Kudos Gift Tracker" />
+      <PageHeader title="Belong" />
       <PageTabs />
       <div className="bg-surface p-6.5">
         <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.7fr)] items-start gap-5">

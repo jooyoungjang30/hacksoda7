@@ -17,7 +17,7 @@ export function TeamDetailPage() {
   const members = useMemberStats(teamId ?? '', people, kudos);
   const claimByTeam = useClaimByTeam(people, teams, kudos);
 
-  if (loading) return <AppShell><PageHeader title="Kudos Gift Tracker" /><PageTabs /></AppShell>;
+  if (loading) return <AppShell><PageHeader title="Belong" /><PageTabs /></AppShell>;
   if (!teamId || !team) return <Navigate to="/kudos" replace />;
 
   const claim = claimByTeam.find((c) => c.team.id === teamId)!;
