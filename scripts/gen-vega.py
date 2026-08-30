@@ -70,7 +70,10 @@ def initials(name):
     p = name.split()
     return (p[0][0] + p[-1][0]).upper()
 
-people, used_ids, used_names = [], set(KEEP), set()
+# NB: do not pre-seed used_ids with KEEP — add() treats a taken id as a collision
+# and renames ('wei' -> 'wei2'), which would insert duplicates of the eight
+# seeded employees instead of reusing their rows.
+people, used_ids, used_names = [], set(), set()
 
 def add(name, title, team, office, manager=None, start=None, pid=None):
     pid = pid or slug(name)
