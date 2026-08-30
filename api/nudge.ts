@@ -8,15 +8,30 @@ const db = createClient(
 const APP = process.env.APP_URL!
 
 async function slack(method: string, body: Record<string, unknown>) {
+  const token = process.env.SLACK_BOT_TOKEN
+  if (!token)
+    throw new Error(
+      'SLACK_BOT_TOKEN is not set on this deployment. Add it in Vercel → ' +
+      'Settings → Environment Variables (Production), then REDEPLOY — env ' +
+      'changes do not apply to existing deployments.'
+    )
+  if (!token.startsWith('xoxb-'))
+    throw new Error(
+      `SLACK_BOT_TOKEN should start with "xoxb-" but starts with ` +
+      `"${token.slice(0, 5)}" (length ${token.length}). You want the ` +
+      `"Bot User OAuth Token" from OAuth & Permissions, not the signing ` +
+      `secret or an app-level "xapp-" token.`
+    )
+
   const r = await fetch(`https://slack.com/api/${method}`, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${process.env.SLACK_BOT_TOKEN}`,
+      Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json; charset=utf-8',
     },
     body: JSON.stringify(body),
   })
-  const json = (await r.json()) as { ok: boolean; error?: string; ts?: string }
+  const json = (await r.json()) as { ok: boolean; error?: string; ts?: string } & Record<string, unknown>
   if (!json.ok) throw new Error(`slack.${method}: ${json.error}`)
   return json
 }
@@ -31,6 +46,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' })
   try {
     const body = req.body ?? {}
+
+    // POST {"debug":true} → asks Slack who this deployment's token belongs to.
+    if (body.debug) {
+      const who = await slack('auth.test', {})
+      return res.status(200).json({ ok: true, team: who.team, bot: who.user })
+    }
+
     res.status(200).json(body.kudosId ? await confirm(body.kudosId) : await send(body))
   } catch (e) {
     console.error(e)

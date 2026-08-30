@@ -8,7 +8,6 @@ const db = createClient(
   process.env.VITE_SUPABASE_URL!,
   process.env.VITE_SUPABASE_ANON_KEY!
 )
-const claude = new Anthropic() // reads ANTHROPIC_API_KEY
 
 const Signal = z.object({
   behavior: z.enum([
@@ -27,6 +26,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { data: k } = await db.from('kudos').select('id, message').eq('id', kudosId).single()
     if (!k) return res.status(404).json({ error: 'no such kudos' })
 
+    if (!process.env.ANTHROPIC_API_KEY)
+      return res.status(200).json({ skipped: 'no ANTHROPIC_API_KEY set' })
+
+    const claude = new Anthropic()
     const r = await claude.messages.parse({
       model: 'claude-opus-5',
       max_tokens: 512,
