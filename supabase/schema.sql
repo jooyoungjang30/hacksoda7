@@ -1,4 +1,4 @@
--- Kudos Gift Tracker — shared schema
+-- Belong — shared schema
 -- Paste into Supabase SQL Editor. No CLI, no migrations, RLS off (hackathon).
 
 drop table if exists nudges, kudos, gift_preferences, budgets, gift_cards, employees cascade;

@@ -1,4 +1,4 @@
-# Kudos Gift Tracker — Implementation Plan (HR views 1.1–1.4)
+# Belong — Implementation Plan (HR views 1.1–1.4)
 
 Target: the HR admin screens specified in `kudos-gift-tracker-spec.html` §1.1–1.4.
 Front-end only, mock data, no backend.
@@ -410,7 +410,7 @@ Small, dumb, no data fetching. Match the mockup's atoms.
 | Component | Props | Notes |
 |---|---|---|
 | `AppShell` | `children` | Sidebar + main column, `min-w-[1240px]` |
-| `Sidebar` | — | Static nav; "Kudos Gift Tracker" active with `NEW` badge |
+| `Sidebar` | — | Static nav; "Belong" active with `NEW` badge |
 | `PageTabs` | — | `<NavLink>` to `/kudos` and `/kudos/network` |
 | `Avatar` | `initials, color, size?` | Circle, white bold text |
 | `Pill` | `tone: 'good'\|'warn'\|'crit'\|'neutral'\|'brand'` | |

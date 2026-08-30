@@ -1,7 +1,16 @@
 import { db, type Employee, type GiftCard, type KudosRow } from './supabase'
 
+/**
+ * Only people with a budget row — i.e. the eight in seed.sql. The HR dataset adds
+ * ~39 more employees for the dashboard; they have no allowance, so listing them
+ * here would both break the sidebar and bury the mockup's "recently worked with".
+ */
 export async function getEmployees() {
-  const { data, error } = await db.from('employees').select('*').order('name')
+  const { data: budgeted, error: bErr } = await db.from('budgets').select('employee_id')
+  if (bErr) throw bErr
+  const ids = (budgeted ?? []).map((b: { employee_id: string }) => b.employee_id)
+
+  const { data, error } = await db.from('employees').select('*').in('id', ids).order('name')
   if (error) throw error
   return data as Employee[]
 }

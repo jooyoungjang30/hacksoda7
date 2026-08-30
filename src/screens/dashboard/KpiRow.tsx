@@ -21,6 +21,7 @@ export function KpiRow({
   const expiringPersonIds = computeExpiringSoonRecipientIds(kudos);
 
   return (
+    <>
     <div className="grid grid-cols-4 gap-3.5">
       <StatCard
         label="Budget used"
@@ -36,6 +37,23 @@ export function KpiRow({
         </div>
         <div className="mt-1.5">
           <Pill tone="warn">{paceLabel(company.usageRatio, company.paceRatio)}</Pill>
+        </div>
+      </StatCard>
+
+      <StatCard
+        label="Claim rate"
+        value={percent(company.claimRatio)}
+        sub={
+          <>
+            <Money cents={company.claimedCents} /> of <Money cents={company.receivedCents} /> redeemed
+          </>
+        }
+      >
+        <div className="mt-2.5">
+          <ProgressBar value={company.claimRatio} tone="good" />
+        </div>
+        <div className="mt-1.5">
+          <Pill tone="neutral">{company.openCount} cards outstanding</Pill>
         </div>
       </StatCard>
 
@@ -58,28 +76,38 @@ export function KpiRow({
       </StatCard>
 
       <StatCard
-        label="Claim rate"
-        value={percent(company.claimRatio)}
-        sub={
-          <>
-            <Money cents={company.claimedCents} /> of <Money cents={company.receivedCents} /> redeemed
-          </>
-        }
+        label="Coverage"
+        value={percent(company.coverageRatio)}
+        sub={`${company.reachedCount} of ${company.headcount} people were reached at all`}
       >
-        <div className="mt-2.5">
-          <ProgressBar value={company.claimRatio} tone="good" />
-        </div>
-        <div className="mt-1.5">
-          <Pill tone="neutral">{company.openCount} cards outstanding</Pill>
+        <div className="mt-3 space-y-2">
+          {company.byOffice.map((o) => (
+            <div key={o.office.id}>
+              <div className="flex items-baseline justify-between text-[11.5px]">
+                <span className="font-semibold">{o.office.name}</span>
+                <span className="tabular-nums text-muted">
+                  <b className={o.ratio < 0.5 ? 'text-crit' : 'text-ink'}>{percent(o.ratio)}</b>
+                  {' · '}
+                  {o.reachedCount}/{o.headcount}
+                </span>
+              </div>
+              <div className="mt-1">
+                <ProgressBar value={o.ratio} tone={o.ratio < 0.5 ? 'crit' : 'good'} />
+              </div>
+            </div>
+          ))}
         </div>
       </StatCard>
 
-      <StatCard
-        label="At risk"
-        value={<Money cents={company.expiringSoonCents} />}
-        sub={`${company.expiringSoonCount} gift cards expire within 30 days`}
-        tone="crit"
-        action={
+    </div>
+
+      <div className="rounded-[10px] border border-[#F0C9C5] bg-[#FFFCFC] px-4 py-3 flex items-center gap-3">
+        <span className="text-[10.5px] font-semibold tracking-wider uppercase text-crit">At risk</span>
+        <span className="text-[13px]">
+          <b className="tabular-nums"><Money cents={company.expiringSoonCents} /></b>
+          <span className="text-muted"> · {company.expiringSoonCount} gift cards expire within 30 days</span>
+        </span>
+        <span className="ml-auto">
           <NudgeButton
             personIds={expiringPersonIds}
             template="unclaimed_gift"
@@ -87,8 +115,8 @@ export function KpiRow({
             people={people}
             teams={teams}
           />
-        }
-      />
-    </div>
+        </span>
+      </div>
+    </>
   );
 }

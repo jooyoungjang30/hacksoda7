@@ -1,4 +1,4 @@
-# Kudos Gift Tracker
+# Belong
 
 Peer-to-peer kudos with real gift cards attached. Employees send colleagues a kudos
 message plus a gift card (from their top-3 preferences); HR gets a dashboard,

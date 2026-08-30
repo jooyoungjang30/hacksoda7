@@ -5,7 +5,7 @@ import { FISCAL_YEAR } from '../../lib/clock';
 const NAV_ITEMS = [
   { icon: '▤', label: 'Create order' },
   { icon: '▦', label: 'Order history' },
-  { icon: '♡', label: 'Kudos Gift Tracker', active: true, badge: 'NEW' },
+  { icon: '♡', label: 'Belong', active: true, badge: 'NEW' },
   { icon: '◔', label: 'Funding' },
   { icon: '⚙', label: 'Setting' },
   { icon: '▷', label: 'API Docs' },

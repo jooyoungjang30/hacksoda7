@@ -1,5 +1,5 @@
 import { TODAY } from '../lib/clock';
-import type { Kudo, Person, PersonId, Team, TeamId } from '../lib/types';
+import type { Kudo, Person, PersonId, Team, TeamId , Office } from '../lib/types';
 
 const DORMANT_DAYS = 90;
 const DORMANT_COLOR = '#B9AECF';
@@ -8,7 +8,12 @@ export interface GraphNode {
   id: PersonId;
   name: string;
   teamId: TeamId;
+  officeId: string;
+  /** Colour when grouped by team (the default view). */
   color: string;
+  /** Colour when grouped by office. Both are dormant-aware, so the view can pick
+   *  one without re-deriving the "no activity in 90 days" rule. */
+  officeColor: string;
   r: number;
   receivedCents: number;
   isDormant: boolean;
@@ -18,7 +23,11 @@ export interface GraphLink {
   source: PersonId;
   target: PersonId;
   width: number;
+  /** Giver's team colour. */
   color: string;
+  /** Giver's office colour — used when the map is grouped by office, so an edge
+   *  crossing between clusters is legible as coming from one side. */
+  officeColor: string;
 }
 
 /** One manager and the people on this list who report to them — the unit an HR
@@ -68,6 +77,29 @@ export interface GraphInsights {
   };
   /** The single strongest two-way relationship, by combined kudos value. */
   strongestBond: { a: Person; b: Person; totalCents: number } | null;
+  /** Recognition across office lines. Participation and claim rate both look
+   *  healthy company-wide while a whole site goes unreached, because every other
+   *  metric averages the sites together. This is the one that separates them. */
+  crossOffice: {
+    totalCrossings: number;
+    offices: OfficeReach[];
+    /** Lowest-coverage office with more than a handful of people — the one worth
+     *  pointing at. Null when there is only one office. */
+    worst: OfficeReach | null;
+  };
+}
+
+export interface OfficeReach {
+  office: Office;
+  headcount: number;
+  reached: number;
+  ratio: number;
+  /** Kudos that arrived from another office. */
+  inbound: number;
+  /** Kudos its people sent to another office. */
+  outbound: number;
+  /** Who sent the most of that inbound — "three of them came from one person". */
+  topInboundSender: { person: Person; count: number } | null;
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -76,7 +108,7 @@ function clamp(value: number, min: number, max: number): number {
 
 /** Insights are always computed from the full company-wide dataset — they describe
  * fixed facts about the org, independent of the graph's current filter/toggle state. */
-function computeInsights(people: Person[], teams: Team[], kudos: Kudo[]): GraphInsights {
+function computeInsights(people: Person[], teams: Team[], kudos: Kudo[], offices: Office[]): GraphInsights {
   const personById = (personId: PersonId): Person => people.find((p) => p.id === personId)!;
   const managerOf = (person: Person): Person | null => (person.managerId ? personById(person.managerId) : null);
   /** The one person on a team with no manager of their own. */
@@ -234,6 +266,33 @@ function computeInsights(people: Person[], teams: Team[], kudos: Kudo[]): GraphI
     }
   }
 
+  const officeOf = (id: PersonId) => personById(id).officeId;
+  const officeReach: OfficeReach[] = offices.map((office) => {
+    const members = people.filter((p) => p.officeId === office.id);
+    const memberIds = new Set(members.map((p) => p.id));
+    const reached = members.filter((p) => realKudos.some((k) => k.toId === p.id)).length;
+    const inboundKudos = realKudos.filter(
+      (k) => memberIds.has(k.toId) && !memberIds.has(k.fromId),
+    );
+    const senderCounts = new Map<PersonId, number>();
+    for (const k of inboundKudos) senderCounts.set(k.fromId, (senderCounts.get(k.fromId) ?? 0) + 1);
+    const top = [...senderCounts.entries()].sort((a, b) => b[1] - a[1])[0];
+    return {
+      office,
+      headcount: members.length,
+      reached,
+      ratio: members.length > 0 ? reached / members.length : 0,
+      inbound: inboundKudos.length,
+      outbound: realKudos.filter((k) => memberIds.has(k.fromId) && !memberIds.has(k.toId)).length,
+      topInboundSender: top ? { person: personById(top[0]), count: top[1] } : null,
+    };
+  });
+  const totalCrossings = realKudos.filter((k) => officeOf(k.fromId) !== officeOf(k.toId)).length;
+  const worst =
+    officeReach.length > 1
+      ? [...officeReach].sort((a, b) => a.ratio - b.ratio)[0]
+      : null;
+
   return {
     mostReliedOn,
     connector,
@@ -255,6 +314,7 @@ function computeInsights(people: Person[], teams: Team[], kudos: Kudo[]): GraphI
     singleSource: { count: singleSourcePeople.length, groups: groupByManager(singleSourcePeople) },
     fragileBridges: { count: fragileCount, totalConnectedPairs, example: fragileExample },
     strongestBond,
+    crossOffice: { totalCrossings, offices: officeReach, worst },
   };
 }
 
@@ -266,14 +326,17 @@ export function buildKudosGraph({
   kudos,
   crossTeamOnly,
   teamFilter,
+  offices,
 }: {
   people: Person[];
   teams: Team[];
   kudos: Kudo[];
   crossTeamOnly: boolean;
   teamFilter: TeamId | 'all';
+  offices: Office[];
 }) {
   const teamById = (teamId: TeamId): Team => teams.find((t) => t.id === teamId)!;
+  const officeById = (id: string): Office | undefined => offices.find((o) => o.id === id);
 
   function isDormant(personId: PersonId): boolean {
     const cutoff = TODAY.getTime() - DORMANT_DAYS * 24 * 60 * 60 * 1000;
@@ -292,14 +355,23 @@ export function buildKudosGraph({
       id: person.id,
       name: person.name.split(' ')[0],
       teamId: person.teamId,
+      officeId: person.officeId,
+      // Colour is the office, not the team: the demo's whole point is that the
+      // gap runs along the office line, and that has to be visible at a glance.
       color: dormant ? DORMANT_COLOR : teamById(person.teamId).color,
+      officeColor: dormant
+        ? DORMANT_COLOR
+        : (officeById(person.officeId)?.color ?? teamById(person.teamId).color),
       r: clamp(5 + Math.sqrt(receivedCents / 100) * 0.7, 5, 13),
       receivedCents,
       isDormant: dormant,
     };
   });
 
-  const aggregated = new Map<string, { source: PersonId; target: PersonId; amount: number; color: string }>();
+  const aggregated = new Map<
+    string,
+    { source: PersonId; target: PersonId; amount: number; color: string; officeColor: string }
+  >();
   for (const k of kudos) {
     if (k.fromId === k.toId) continue;
     if (!peopleIds.has(k.fromId) || !peopleIds.has(k.toId)) continue;
@@ -313,8 +385,14 @@ export function buildKudosGraph({
     if (existing) {
       existing.amount += k.amountCents;
     } else {
-      const giverTeam = people.find((p) => p.id === k.fromId)!.teamId;
-      aggregated.set(key, { source: k.fromId, target: k.toId, amount: k.amountCents, color: teamById(giverTeam).color });
+      const giver = people.find((p) => p.id === k.fromId)!;
+      aggregated.set(key, {
+        source: k.fromId,
+        target: k.toId,
+        amount: k.amountCents,
+        color: teamById(giver.teamId).color,
+        officeColor: officeById(giver.officeId)?.color ?? teamById(giver.teamId).color,
+      });
     }
   }
 
@@ -323,7 +401,8 @@ export function buildKudosGraph({
     target: a.target,
     width: clamp(1 + a.amount / 1500, 1, 3),
     color: a.color,
+    officeColor: a.officeColor,
   }));
 
-  return { nodes, links, insights: computeInsights(people, teams, kudos) };
+  return { nodes, links, insights: computeInsights(people, teams, kudos, offices) };
 }

@@ -79,7 +79,7 @@ export function RelationshipsPage() {
       return primary !== 0 ? primary : a.person.name.localeCompare(b.person.name);
     });
 
-  if (loading) return <AppShell><PageHeader title="Kudos Gift Tracker" /><PageTabs /></AppShell>;
+  if (loading) return <AppShell><PageHeader title="Belong" /><PageTabs /></AppShell>;
 
   const backQuery = searchParams.toString();
 
@@ -116,7 +116,7 @@ export function RelationshipsPage() {
 
   return (
     <AppShell>
-      <PageHeader title="Kudos Gift Tracker" />
+      <PageHeader title="Belong" />
       <PageTabs />
       <div className="flex flex-col gap-3.5 bg-surface p-6.5">
         <div className="flex items-center gap-3">

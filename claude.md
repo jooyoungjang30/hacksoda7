@@ -71,7 +71,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ---
 
-## Project-specific: Kudos Gift Tracker
+## Project-specific: Belong
 
 Vite + React 19 + TypeScript + react-router-dom 7 + Supabase. See `README.md` for
 setup and scripts. Rules below are durable constraints from the build plans

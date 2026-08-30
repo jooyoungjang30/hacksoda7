@@ -125,6 +125,74 @@ export function GraphInsights({ insights }: { insights: GraphInsightsData }) {
       <div className="grid grid-cols-[2fr_1.4fr_1.4fr] gap-4">
         <Column>
           <Section tone="attention" title="Needs attention" sub="worth a message this week">
+          {insights.crossOffice.worst && insights.crossOffice.offices.length > 1 && (
+            <InsightCard
+              title={`Recognition is not reaching ${insights.crossOffice.worst.office.name}`}
+              stat={percent(insights.crossOffice.worst.ratio)}
+              tone="attention"
+            >
+              <b className="text-ink">
+                {insights.crossOffice.worst.reached} of {insights.crossOffice.worst.headcount}
+              </b>{' '}
+              people in {insights.crossOffice.worst.office.name} have been thanked by anyone in the
+              last 90 days.{' '}
+              <b className="text-ink">{insights.crossOffice.worst.inbound}</b> of those thank-yous
+              came from another office
+              {insights.crossOffice.worst.topInboundSender &&
+                insights.crossOffice.worst.topInboundSender.count > 1 && (
+                  <>
+                    , and{' '}
+                    <b className="text-ink">
+                      {insights.crossOffice.worst.topInboundSender.count} of them
+                    </b>{' '}
+                    came from{' '}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onPersonClick(insights.crossOffice.worst!.topInboundSender!.person.id)
+                      }
+                      className="font-semibold text-ink hover:underline"
+                    >
+                      {insights.crossOffice.worst.topInboundSender.person.name}
+                    </button>{' '}
+                    alone
+                  </>
+                )}
+              .
+              {/* An aligned table, not pills: pills mean "a person you can click"
+                  everywhere else in this panel, and four numbers per office is
+                  more than a chip can hold without wrapping badly. */}
+              <div className="mt-2.5 border-t border-warn/25 pt-2">
+                <div className="grid grid-cols-[1fr_auto_auto_auto] items-baseline gap-x-3 text-[10px] font-semibold tracking-wider text-muted uppercase">
+                  <span>Office</span>
+                  <span className="text-right">Reached</span>
+                  <span className="text-right">Sent out</span>
+                  <span className="text-right">Received in</span>
+                </div>
+                {insights.crossOffice.offices.map((o) => (
+                  <div
+                    key={o.office.id}
+                    className="grid grid-cols-[1fr_auto_auto_auto] items-baseline gap-x-3 py-0.5 text-[11.5px] tabular-nums"
+                  >
+                    <span className="flex items-center gap-1.5 truncate">
+                      <i
+                        className="h-2 w-2 flex-none rounded-full"
+                        style={{ background: o.office.color }}
+                      />
+                      <b className="text-ink">{o.office.name}</b>
+                    </span>
+                    <span className="text-right">
+                      <b className={o.ratio < 0.5 ? 'text-crit' : 'text-ink'}>{percent(o.ratio)}</b>
+                      <span className="text-muted"> ({o.reached}/{o.headcount})</span>
+                    </span>
+                    <span className="text-right text-muted">{o.outbound}</span>
+                    <span className="text-right text-muted">{o.inbound}</span>
+                  </div>
+                ))}
+              </div>
+            </InsightCard>
+          )}
+
             <InsightCard title="Not reached" stat={String(insights.unreached.count)} tone="attention">
               No one has recognized them in the last 90 days — a gap in the org's reach, not a reflection on
               them.

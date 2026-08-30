@@ -3,9 +3,12 @@
 -- Wei has $30 left of $80, $110 received, $85 claimed, $25 waiting to claim.
 -- Safe to run any number of times. Does NOT drop tables — the seed survives.
 
--- 1. Remove everything the demo created (the seed is ids 1-12).
+-- 1. Remove everything the demo created.
+--    demo_watermark is written once by fix-watermark.sql and never touched here,
+--    so this deletes only rehearsal kudos — never the 187-row HR dataset.
 delete from nudges;
-delete from kudos where id > 12;
+delete from kudos
+ where id > (select max_kudos_id from demo_watermark where id = 1);
 
 -- 2. Put the budgets back.
 update budgets set spent_cents = v.spent, allocated_cents = 8000, period = 'FY2026',

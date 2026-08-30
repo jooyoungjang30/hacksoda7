@@ -54,11 +54,23 @@ export default function Send() {
   const affordable = DENOMS.filter(d => d <= left)
   const gift = catalog.find(g => g.id === giftId) ?? null
   const followedPreference = !!prefs?.some(p => p.card.id === giftId)
+  // Most US and Japanese cards are sold at one fixed price, so the amount is a
+  // property of the card rather than something the sender chooses.
+  const fixedPrice = gift && gift.soda_custom_amount === false ? gift.min_cents : null
+  const nativePrice =
+    gift?.native_amount && gift.currency
+      ? new Intl.NumberFormat('en', {
+          style: 'currency',
+          currency: gift.currency,
+          maximumFractionDigits: gift.currency === 'JPY' ? 0 : 2,
+        }).format(gift.native_amount)
+      : null
   const ready = !!(recipientId && giftId && message.trim() && amount > 0 && amount <= left)
 
   useEffect(() => {
+    if (fixedPrice !== null) { setAmount(fixedPrice); return }
     if (affordable.length && !affordable.includes(amount)) setAmount(affordable.at(-1)!)
-  }, [left]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [left, fixedPrice]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function submit() {
     if (!ready || !recipientId || !giftId) return
@@ -229,15 +241,25 @@ export default function Send() {
             <div className="card-h"><h3>3 · Amount and message</h3></div>
             <div style={{ padding: '16px 18px' }}>
               <div style={{ display: 'flex', gap: 9, alignItems: 'center', flexWrap: 'wrap' }}>
-                {affordable.map(d => (
-                  <button
-                    key={d}
-                    className={'btn sm' + (d === amount ? ' on' : '')}
-                    onClick={() => setAmount(d)}
-                  >
-                    {usd(d)}
-                  </button>
-                ))}
+                {fixedPrice !== null ? (
+                  <>
+                    <span className="btn sm on">{nativePrice ?? usd(fixedPrice)}</span>
+                    <span className="muted" style={{ fontSize: 11.5 }}>
+                      {gift?.brand} is sold at a fixed price
+                      {nativePrice && gift?.currency !== 'USD' && <> · {usd(fixedPrice)} from your budget</>}
+                    </span>
+                  </>
+                ) : (
+                  affordable.map(d => (
+                    <button
+                      key={d}
+                      className={'btn sm' + (d === amount ? ' on' : '')}
+                      onClick={() => setAmount(d)}
+                    >
+                      {usd(d)}
+                    </button>
+                  ))
+                )}
                 <span className="muted" style={{ marginLeft: 'auto', fontSize: 11.5 }}>
                   Max {usd(left)} — your remaining budget
                 </span>

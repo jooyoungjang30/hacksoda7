@@ -32,7 +32,10 @@ async function slack(method: string, body: Record<string, unknown>) {
     body: JSON.stringify(body),
   })
   const json = (await r.json()) as { ok: boolean; error?: string; ts?: string } & Record<string, unknown>
-  if (!json.ok) throw new Error(`slack.${method}: ${json.error}`)
+  if (!json.ok) {
+    const where = typeof body.channel === 'string' ? ` (channel: ${body.channel})` : ''
+    throw new Error(`slack.${method}: ${json.error}${where}`)
+  }
   return json
 }
 
@@ -81,6 +84,16 @@ async function send({ targetId = 'wei', suggestedTo = 'sofia' }) {
   if (!target) throw new Error(`no employee '${targetId}'`)
   if (!target.slack_user_id)
     throw new Error(`'${targetId}' has no slack_user_id — set it in the employees table`)
+  if (target.slack_user_id === 'U01ABCDEFGH')
+    throw new Error(
+      `'${targetId}' still has the placeholder slack_user_id from demo-setup.sql. ` +
+      `Run: update employees set slack_user_id = '<your real U... id>' where id = '${targetId}';`,
+    )
+  if (!/^[UW][A-Z0-9]{6,}$/.test(target.slack_user_id))
+    throw new Error(
+      `'${target.slack_user_id}' is not a Slack member id. Copy it from your Slack ` +
+      `profile menu (Copy member ID) — it starts with U.`,
+    )
 
   const left = budget!.allocated_cents - budget!.spent_cents
   const days = Math.round((+new Date(budget!.resets_on) - Date.now()) / 86_400_000)

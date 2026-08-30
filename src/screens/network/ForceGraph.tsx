@@ -1,7 +1,8 @@
 import { useMemo, useRef, useState } from 'react';
 import type { GraphInsights, GraphLink, GraphNode } from '../../hooks/useKudosGraph';
-import { useForceLayout, type PositionedNode } from './useForceLayout';
+import { useForceLayout, type ClusterBy, type PositionedNode } from './useForceLayout';
 import { useZoomPan } from './useZoomPan';
+import type { Office } from '../../lib/types';
 
 // Square-ish: the map now sits in a half-width column with the legend below it
 // rather than beside it, so it has more vertical room than the old widescreen card.
@@ -20,22 +21,52 @@ export function ForceGraph({
   links,
   insights,
   onNodeClick,
+  clusterBy = 'team',
+  offices = [],
 }: {
   nodes: GraphNode[];
   links: GraphLink[];
   insights: GraphInsights;
   onNodeClick?: (id: string) => void;
+  clusterBy?: ClusterBy;
+  offices?: Office[];
 }) {
   const { positionedNodes, positionedLinks, dragStart, dragMove, dragEnd } = useForceLayout(
     nodes,
     links,
     WIDTH,
     HEIGHT,
+    clusterBy,
   );
+
+  // When grouped, label each cluster where its people actually ended up, so the
+  // caption follows the layout instead of assuming a fixed position.
+  const officeLabels =
+    clusterBy === 'office'
+      ? offices
+          .map((office) => {
+            const members = positionedNodes.filter((n) => n.officeId === office.id);
+            if (members.length === 0) return null;
+            return {
+              office,
+              count: members.length,
+              x: members.reduce((sum, n) => sum + n.x, 0) / members.length,
+              y: Math.min(...members.map((n) => n.y)) - 26,
+            };
+          })
+          .filter((v): v is NonNullable<typeof v> => v !== null)
+      : [];
   const { svgRef, toSvg, view, scale, panning, isDefault, zoomIn, zoomOut, reset, handlers } =
     useZoomPan(WIDTH, HEIGHT);
 
   const [hovered, setHovered] = useState<string | null>(null);
+
+  // Colour follows the grouping: teams when the map is arranged by team, offices
+  // when it is arranged by office. Anything else leaves the legend describing a
+  // picture that isn't on screen.
+  const byOffice = clusterBy === 'office';
+  const nodeFill = (n: { color: string; officeColor: string }) => (byOffice ? n.officeColor : n.color);
+  const linkStroke = (l: { color: string; officeColor: string }) => (byOffice ? l.officeColor : l.color);
   const dragging = useRef<PositionedNode | null>(null);
   const pointerDownAt = useRef<{ x: number; y: number } | null>(null);
 
@@ -99,7 +130,7 @@ export function ForceGraph({
         viewBox={`${view.x} ${view.y} ${view.w} ${view.h}`}
         className={`block h-auto w-full touch-none ${panning ? 'cursor-grabbing' : 'cursor-grab'}`}
         role="img"
-        aria-label={`Force-directed graph of kudos sent between ${positionedNodes.length} colleagues, clustered by team. Scroll to zoom, drag to pan, drag a node to move it.`}
+        aria-label={`Force-directed graph of kudos sent between ${positionedNodes.length} colleagues, grouped by ${byOffice ? 'office' : 'team'}. Scroll to zoom, drag to pan, drag a node to move it.`}
         {...handlers}
       >
         <defs>
@@ -124,13 +155,24 @@ export function ForceGraph({
               y1={l.source.y}
               x2={l.target.x}
               y2={l.target.y}
-              stroke={l.color}
+              stroke={linkStroke(l)}
               strokeWidth={l.width * k}
               opacity={linkDim(l)}
               style={{ transition: 'opacity 160ms ease' }}
             />
           ))}
         </g>
+
+        {officeLabels.map((l) => (
+          <g key={l.office.id} fontFamily="IBM Plex Sans, sans-serif" textAnchor="middle">
+            <text x={l.x} y={l.y} fill={l.office.color} fontSize={19} fontWeight={700}>
+              {l.office.name}
+            </text>
+            <text x={l.x} y={l.y + 18} fill="#8A8F9C" fontSize={13}>
+              {l.count} {l.count === 1 ? 'person' : 'people'}
+            </text>
+          </g>
+        ))}
 
         <g fontFamily="IBM Plex Sans, sans-serif" textAnchor="middle">
           {positionedNodes.map((n) => {
@@ -160,19 +202,24 @@ export function ForceGraph({
                   cx={n.x}
                   cy={n.y}
                   r={n.r}
-                  fill={n.color}
+                  fill={nodeFill(n)}
                   stroke={focused ? '#fff' : 'rgba(255,255,255,0.25)'}
                   strokeWidth={(focused ? 2 : 1) * k}
                 />
-                <text
-                  x={n.x}
-                  y={n.y + n.r + 13 * k}
-                  fontSize={11 * k}
-                  fill={focused ? '#fff' : n.isDormant ? '#6E6880' : '#B9B2C9'}
-                  fontWeight={focused ? 600 : 400}
-                >
-                  {n.name}
-                </text>
+                {/* 200 names at once is unreadable from the back of a room. Show
+                    the well-connected few, whatever is hovered, and everything
+                    once someone zooms in to look properly. */}
+                {(focused || scale > 1.25 || n.r >= 9) && (
+                  <text
+                    x={n.x}
+                    y={n.y + n.r + 13 * k}
+                    fontSize={11 * k}
+                    fill={focused ? '#fff' : n.isDormant ? '#6E6880' : '#B9B2C9'}
+                    fontWeight={focused ? 600 : 400}
+                  >
+                    {n.name}
+                  </text>
+                )}
               </g>
             );
           })}
