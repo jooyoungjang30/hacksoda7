@@ -3,26 +3,27 @@ import { AppShell } from '../../components/shell/AppShell';
 import { PageHeader } from '../../components/shell/PageHeader';
 import { PageTabs } from '../../components/shell/PageTabs';
 import { Card } from '../../components/ui/Card';
-import { useKudosGraph } from '../../hooks/useKudosGraph';
-import { mockTeams } from '../../mock/teams';
-import { mockPeople } from '../../mock/people';
+import { buildKudosGraph } from '../../hooks/useKudosGraph';
+import { useHrDataset } from '../../hooks/useHrDataset';
 import { ForceGraph } from './ForceGraph';
 import { GraphInsights } from './GraphInsights';
 import type { TeamId } from '../../lib/types';
-import { useLiveKudos } from '../../hooks/useLiveKudos';
 
 export function NetworkMapPage() {
-  useLiveKudos();
+  const { people, teams, kudos, loading } = useHrDataset();
   const [teamFilter, setTeamFilter] = useState<TeamId | 'all'>('all');
   const [crossTeamOnly, setCrossTeamOnly] = useState(false);
-  const { nodes, links, insights } = useKudosGraph({ crossTeamOnly, teamFilter });
+
+  if (loading) return <AppShell><PageHeader title="Kudos Gift Tracker" /><PageTabs /></AppShell>;
+
+  const { nodes, links, insights } = buildKudosGraph({ people, teams, kudos, crossTeamOnly, teamFilter });
 
   return (
     <AppShell>
       <PageHeader title="Kudos Gift Tracker" />
       <PageTabs />
       <div className="bg-surface p-6.5">
-        <div className="grid grid-cols-2 items-start gap-5">
+        <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.7fr)] items-start gap-5">
           <div className="flex flex-col gap-3.5">
             <div className="flex items-center gap-3">
               <select
@@ -31,7 +32,7 @@ export function NetworkMapPage() {
                 className="rounded-md border border-line bg-white px-2.5 py-1.5 text-[12.5px]"
               >
                 <option value="all">All teams</option>
-                {mockTeams.map((t) => (
+                {teams.map((t) => (
                   <option key={t.id} value={t.id}>
                     {t.name}
                   </option>
@@ -58,12 +59,12 @@ export function NetworkMapPage() {
             <Card className="p-4">
               <div className="mb-3 text-[10.5px] font-semibold tracking-wider text-muted uppercase">Legend</div>
               <div className="grid grid-cols-2 gap-x-5 gap-y-1.5 text-xs">
-                {mockTeams.map((t) => (
+                {teams.map((t) => (
                   <div key={t.id} className="flex items-center gap-2">
                     <i className="h-2.5 w-2.5 flex-none rounded-full" style={{ background: t.color }} />
                     {t.name}
                     <span className="ml-auto text-muted tabular-nums">
-                      {mockPeople.filter((p) => p.teamId === t.id).length}
+                      {people.filter((p) => p.teamId === t.id).length}
                     </span>
                   </div>
                 ))}
@@ -82,7 +83,7 @@ export function NetworkMapPage() {
             </Card>
           </div>
 
-          <GraphInsights insights={insights} />
+          <GraphInsights insights={insights} teams={teams} />
         </div>
       </div>
     </AppShell>

@@ -5,11 +5,20 @@ import { ProgressBar } from '../../components/ui/ProgressBar';
 import { StatCard } from '../../components/ui/StatCard';
 import { computeExpiringSoonRecipientIds, paceLabel } from '../../lib/derive';
 import { percent } from '../../lib/format';
-import { mockKudos } from '../../mock/kudos';
-import type { CompanyStats } from '../../lib/types';
+import type { CompanyStats, Kudo, Person, Team } from '../../lib/types';
 
-export function KpiRow({ company }: { company: CompanyStats }) {
-  const expiringPersonIds = computeExpiringSoonRecipientIds(mockKudos);
+export function KpiRow({
+  company,
+  people,
+  teams,
+  kudos,
+}: {
+  company: CompanyStats;
+  people: Person[];
+  teams: Team[];
+  kudos: Kudo[];
+}) {
+  const expiringPersonIds = computeExpiringSoonRecipientIds(kudos);
 
   return (
     <div className="grid grid-cols-4 gap-3.5">
@@ -75,6 +84,8 @@ export function KpiRow({ company }: { company: CompanyStats }) {
             personIds={expiringPersonIds}
             template="unclaimed_gift"
             label={`Nudge all ${company.expiringSoonCount} recipients`}
+            people={people}
+            teams={teams}
           />
         }
       />

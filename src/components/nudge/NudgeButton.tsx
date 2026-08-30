@@ -1,10 +1,8 @@
 import { useState } from 'react';
-import { mockPeople } from '../../mock/people';
-import { mockTeams } from '../../mock/teams';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { useToast } from '../ui/Toast';
 import { useNudge } from './NudgeContext';
-import type { NudgeTemplate, PersonId } from '../../lib/types';
+import type { NudgeTemplate, Person, PersonId, Team } from '../../lib/types';
 
 const BULK_CONFIRM_THRESHOLD = 5;
 
@@ -13,15 +11,15 @@ const TEMPLATE_SUMMARY: Record<NudgeTemplate, string> = {
   unclaimed_gift: 'a reminder to claim the gift cards waiting for them',
 };
 
-function nameOf(id: PersonId): string {
-  return mockPeople.find((p) => p.id === id)?.name ?? 'Unknown';
+function nameOf(id: PersonId, people: Person[]): string {
+  return people.find((p) => p.id === id)?.name ?? 'Unknown';
 }
 
-function describeTargets(personIds: PersonId[]): string {
-  if (personIds.length === 1) return `Nudged ${nameOf(personIds[0])}`;
-  const teamIds = new Set(personIds.map((id) => mockPeople.find((p) => p.id === id)?.teamId));
+function describeTargets(personIds: PersonId[], people: Person[], teams: Team[]): string {
+  if (personIds.length === 1) return `Nudged ${nameOf(personIds[0], people)}`;
+  const teamIds = new Set(personIds.map((id) => people.find((p) => p.id === id)?.teamId));
   if (teamIds.size === 1) {
-    const team = mockTeams.find((t) => t.id === [...teamIds][0]);
+    const team = teams.find((t) => t.id === [...teamIds][0]);
     return `Nudged ${personIds.length} people in ${team?.name ?? 'team'}`;
   }
   return `Nudged ${personIds.length} people`;
@@ -31,10 +29,14 @@ export function NudgeButton({
   personIds,
   template,
   label,
+  people,
+  teams,
 }: {
   personIds: PersonId[];
   template: NudgeTemplate;
   label?: string;
+  people: Person[];
+  teams: Team[];
 }) {
   const { sendNudge, canNudge } = useNudge();
   const { showToast } = useToast();
@@ -48,7 +50,7 @@ export function NudgeButton({
 
   function send() {
     sendNudge(recipients, template);
-    showToast(describeTargets(recipients));
+    showToast(describeTargets(recipients, people, teams));
   }
 
   function handleClick() {
@@ -87,7 +89,7 @@ export function NudgeButton({
         <ul className="mt-3 max-h-44 overflow-y-auto rounded-md border border-line bg-surface px-3 py-2 text-[12.5px] text-ink">
           {recipients.map((id) => (
             <li key={id} className="py-0.5">
-              {nameOf(id)}
+              {nameOf(id, people)}
             </li>
           ))}
         </ul>

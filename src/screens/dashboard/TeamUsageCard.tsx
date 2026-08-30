@@ -8,16 +8,24 @@ import { ProgressBar } from '../../components/ui/ProgressBar';
 import { computeTeamMemberStats, paceLabel } from '../../lib/derive';
 import { fiscalYearProgress } from '../../lib/clock';
 import { percent, teamInitials } from '../../lib/format';
-import { mockPeople } from '../../mock/people';
-import { mockKudos } from '../../mock/kudos';
-import type { TeamStats } from '../../lib/types';
+import type { Kudo, Person, Team, TeamStats } from '../../lib/types';
 
-export function TeamUsageCard({ stats }: { stats: TeamStats }) {
+export function TeamUsageCard({
+  stats,
+  people,
+  teams,
+  kudos,
+}: {
+  stats: TeamStats;
+  people: Person[];
+  teams: Team[];
+  kudos: Kudo[];
+}) {
   const navigate = useNavigate();
   const tone = paceStatusTone(stats.paceStatus) as 'good' | 'warn' | 'crit';
   const pace = fiscalYearProgress();
 
-  const nudgeTargets = computeTeamMemberStats(stats.team.id, mockPeople, mockKudos)
+  const nudgeTargets = computeTeamMemberStats(stats.team.id, people, kudos)
     .filter((m) => m.usageRatio < 1)
     .map((m) => m.person.id);
 
@@ -54,6 +62,8 @@ export function TeamUsageCard({ stats }: { stats: TeamStats }) {
           personIds={nudgeTargets}
           template="unused_budget"
           label={`Nudge team · ${nudgeTargets.length}`}
+          people={people}
+          teams={teams}
         />
       </div>
     </div>

@@ -12,7 +12,6 @@ import type {
   TeamId,
   TeamStats,
 } from './types';
-import { mockTeams } from '../mock/teams';
 
 export const ANNUAL_ALLOWANCE_CENTS = 8000;
 const EXPIRING_SOON_DAYS = 30;
@@ -32,8 +31,8 @@ export function paceLabel(usageRatio: number, pace: number): string {
   return pointsAhead < 10 ? 'On pace' : 'Ahead of pace';
 }
 
-function teamById(teamId: TeamId): Team {
-  const team = mockTeams.find((t) => t.id === teamId);
+function teamById(teamId: TeamId, teams: Team[]): Team {
+  const team = teams.find((t) => t.id === teamId);
   if (!team) throw new Error(`Unknown team id: ${teamId}`);
   return team;
 }
@@ -85,9 +84,9 @@ export function computeTeamMemberStats(teamId: TeamId, people: Person[], kudos: 
     .sort((a, b) => a.usageRatio - b.usageRatio);
 }
 
-export function computeTeamStats(people: Person[], kudos: Kudo[]): TeamStats[] {
+export function computeTeamStats(people: Person[], teams: Team[], kudos: Kudo[]): TeamStats[] {
   const pace = fiscalYearProgress();
-  return mockTeams
+  return teams
     .map((team) => {
       const members = people.filter((p) => p.teamId === team.id);
       const memberStats = members.map((p) => computeMemberStats(p.id, people, kudos));
@@ -141,7 +140,7 @@ export function computeExpiringSoonRecipientIds(kudos: Kudo[]): PersonId[] {
   return [...new Set(expiringSoon.map((k) => k.toId))];
 }
 
-export function computeLeaderboard(people: Person[], kudos: Kudo[], limit: number): LeaderboardRow[] {
+export function computeLeaderboard(people: Person[], teams: Team[], kudos: Kudo[], limit: number): LeaderboardRow[] {
   return people
     .map((person) => {
       const received = kudos.filter((k) => k.toId === person.id);
@@ -149,7 +148,7 @@ export function computeLeaderboard(people: Person[], kudos: Kudo[], limit: numbe
       const distinctGivers = new Set(received.map((k) => k.fromId)).size;
       return {
         person,
-        team: teamById(person.teamId),
+        team: teamById(person.teamId, teams),
         receivedCents,
         kudosCount: received.length,
         distinctGivers,
@@ -159,8 +158,8 @@ export function computeLeaderboard(people: Person[], kudos: Kudo[], limit: numbe
     .slice(0, limit);
 }
 
-export function computeClaimByTeam(people: Person[], kudos: Kudo[]): TeamClaimRow[] {
-  return mockTeams
+export function computeClaimByTeam(people: Person[], teams: Team[], kudos: Kudo[]): TeamClaimRow[] {
+  return teams
     .map((team) => {
       const members = people.filter((p) => p.teamId === team.id);
       const memberIds = new Set(members.map((p) => p.id));

@@ -6,9 +6,7 @@ import { Pill } from '../../components/ui/Pill';
 import { ProgressBar } from '../../components/ui/ProgressBar';
 import { computeTeamMemberStats } from '../../lib/derive';
 import { percent, teamInitials } from '../../lib/format';
-import { mockPeople } from '../../mock/people';
-import { mockKudos } from '../../mock/kudos';
-import type { CompanyStats, TeamClaimRow } from '../../lib/types';
+import type { CompanyStats, Kudo, Person, Team, TeamClaimRow } from '../../lib/types';
 
 function openCountTone(count: number): 'crit' | 'warn' | 'neutral' {
   if (count >= 10) return 'crit';
@@ -16,9 +14,21 @@ function openCountTone(count: number): 'crit' | 'warn' | 'neutral' {
   return 'neutral';
 }
 
-export function ClaimTrackingTable({ rows, company }: { rows: TeamClaimRow[]; company: CompanyStats }) {
+export function ClaimTrackingTable({
+  rows,
+  company,
+  people,
+  teams,
+  kudos,
+}: {
+  rows: TeamClaimRow[];
+  company: CompanyStats;
+  people: Person[];
+  teams: Team[];
+  kudos: Kudo[];
+}) {
   const everyoneWithOpenCards = [
-    ...new Set(mockKudos.filter((k) => k.claimedAt === null).map((k) => k.toId)),
+    ...new Set(kudos.filter((k) => k.claimedAt === null).map((k) => k.toId)),
   ];
 
   return (
@@ -42,7 +52,7 @@ export function ClaimTrackingTable({ rows, company }: { rows: TeamClaimRow[]; co
         <tbody>
           {rows.map((row) => {
             const barTone = row.claimRatio >= 0.85 ? 'good' : row.claimRatio >= 0.7 ? 'warn' : 'crit';
-            const nudgeTargets = computeTeamMemberStats(row.team.id, mockPeople, mockKudos)
+            const nudgeTargets = computeTeamMemberStats(row.team.id, people, kudos)
               .filter((m) => m.unclaimedCount > 0)
               .map((m) => m.person.id);
             return (
@@ -74,7 +84,7 @@ export function ClaimTrackingTable({ rows, company }: { rows: TeamClaimRow[]; co
                   <Pill tone={openCountTone(row.openCount)}>{row.openCount}</Pill>
                 </td>
                 <td className="border-b border-[#F2F0F7] px-3.5 py-2.5">
-                  <NudgeButton personIds={nudgeTargets} template="unclaimed_gift" />
+                  <NudgeButton personIds={nudgeTargets} template="unclaimed_gift" people={people} teams={teams} />
                 </td>
               </tr>
             );
@@ -91,6 +101,8 @@ export function ClaimTrackingTable({ rows, company }: { rows: TeamClaimRow[]; co
             personIds={everyoneWithOpenCards}
             template="unclaimed_gift"
             label="Nudge everyone with open cards"
+            people={people}
+            teams={teams}
           />
         </span>
       </div>

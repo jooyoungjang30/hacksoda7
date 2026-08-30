@@ -1,7 +1,7 @@
 import { AppShell } from '../../components/shell/AppShell';
 import { PageHeader } from '../../components/shell/PageHeader';
 import { PageTabs } from '../../components/shell/PageTabs';
-import { useLiveKudos } from '../../hooks/useLiveKudos';
+import { useHrDataset } from '../../hooks/useHrDataset';
 import { useCompanyStats } from '../../hooks/useCompanyStats';
 import { useTeamStats } from '../../hooks/useTeamStats';
 import { useLeaderboard } from '../../hooks/useLeaderboard';
@@ -12,22 +12,24 @@ import { Leaderboard } from './Leaderboard';
 import { ClaimTrackingTable } from './ClaimTrackingTable';
 
 export function DashboardPage() {
-  useLiveKudos();
-  const company = useCompanyStats();
-  const teams = useTeamStats();
-  const leaderboard = useLeaderboard(7);
-  const claimByTeam = useClaimByTeam();
+  const { people, teams: teamList, kudos, loading } = useHrDataset();
+  const company = useCompanyStats(people, kudos);
+  const teams = useTeamStats(people, teamList, kudos);
+  const leaderboard = useLeaderboard(people, teamList, kudos, 7);
+  const claimByTeam = useClaimByTeam(people, teamList, kudos);
+
+  if (loading) return <AppShell><PageHeader title="Kudos Gift Tracker" /><PageTabs /></AppShell>;
 
   return (
     <AppShell>
       <PageHeader title="Kudos Gift Tracker" />
       <PageTabs />
       <div className="space-y-5 bg-surface p-6.5">
-        <KpiRow company={company} />
-        <TeamUsageGrid teams={teams} />
+        <KpiRow company={company} people={people} teams={teamList} kudos={kudos} />
+        <TeamUsageGrid teams={teams} people={people} teamList={teamList} kudos={kudos} />
         <div className="grid grid-cols-[1fr_1.35fr] items-start gap-5">
           <Leaderboard rows={leaderboard} />
-          <ClaimTrackingTable rows={claimByTeam} company={company} />
+          <ClaimTrackingTable rows={claimByTeam} company={company} people={people} teams={teamList} kudos={kudos} />
         </div>
       </div>
     </AppShell>

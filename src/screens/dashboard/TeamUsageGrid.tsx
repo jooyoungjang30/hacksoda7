@@ -1,8 +1,18 @@
 import { Card, CardHeader } from '../../components/ui/Card';
 import { TeamUsageCard } from './TeamUsageCard';
-import type { TeamStats } from '../../lib/types';
+import type { Kudo, Person, Team, TeamStats } from '../../lib/types';
 
-export function TeamUsageGrid({ teams }: { teams: TeamStats[] }) {
+export function TeamUsageGrid({
+  teams,
+  people,
+  teamList,
+  kudos,
+}: {
+  teams: TeamStats[];
+  people: Person[];
+  teamList: Team[];
+  kudos: Kudo[];
+}) {
   return (
     <Card className="mt-5">
       <CardHeader
@@ -11,7 +21,7 @@ export function TeamUsageGrid({ teams }: { teams: TeamStats[] }) {
       />
       <div className="grid grid-cols-3 gap-3.5 p-[18px]">
         {teams.map((stats) => (
-          <TeamUsageCard key={stats.team.id} stats={stats} />
+          <TeamUsageCard key={stats.team.id} stats={stats} people={people} teams={teamList} kudos={kudos} />
         ))}
       </div>
     </Card>

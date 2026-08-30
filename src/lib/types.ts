@@ -26,7 +26,6 @@ export interface Kudo {
   fromId: PersonId;
   toId: PersonId;
   amountCents: number;
-  giftCardName: string; // "Amazon.co.uk Gift Card"
   message: string;
   sentAt: string; // ISO date
   claimedAt: string | null; // null = outstanding

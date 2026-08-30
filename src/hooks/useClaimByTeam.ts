@@ -1,7 +1,6 @@
 import { computeClaimByTeam } from '../lib/derive';
-import { mockPeople } from '../mock/people';
-import { mockKudos } from '../mock/kudos';
+import type { Kudo, Person, Team } from '../lib/types';
 
-export function useClaimByTeam() {
-  return computeClaimByTeam(mockPeople, mockKudos);
+export function useClaimByTeam(people: Person[], teams: Team[], kudos: Kudo[]) {
+  return computeClaimByTeam(people, teams, kudos);
 }

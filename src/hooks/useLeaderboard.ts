@@ -1,7 +1,6 @@
 import { computeLeaderboard } from '../lib/derive';
-import { mockPeople } from '../mock/people';
-import { mockKudos } from '../mock/kudos';
+import type { Kudo, Person, Team } from '../lib/types';
 
-export function useLeaderboard(limit: number) {
-  return computeLeaderboard(mockPeople, mockKudos, limit);
+export function useLeaderboard(people: Person[], teams: Team[], kudos: Kudo[], limit: number) {
+  return computeLeaderboard(people, teams, kudos, limit);
 }

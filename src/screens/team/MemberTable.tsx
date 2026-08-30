@@ -6,8 +6,7 @@ import { Pill, paceStatusTone } from '../../components/ui/Pill';
 import { ProgressBar } from '../../components/ui/ProgressBar';
 import { fiscalYearProgress } from '../../lib/clock';
 import { percent, shortDate } from '../../lib/format';
-import { mockTeams } from '../../mock/teams';
-import type { MemberStats } from '../../lib/types';
+import type { MemberStats, Person, Team } from '../../lib/types';
 
 function claimPill(m: MemberStats) {
   if (m.unclaimedCount === 0) return <Pill tone="good">All claimed</Pill>;
@@ -15,9 +14,19 @@ function claimPill(m: MemberStats) {
   return <Pill tone={m.unclaimedCount > 1 ? 'crit' : 'warn'}>{label}</Pill>;
 }
 
-export function MemberTable({ members, teamName }: { members: MemberStats[]; teamName: string }) {
+export function MemberTable({
+  members,
+  teamName,
+  people,
+  teams,
+}: {
+  members: MemberStats[];
+  teamName: string;
+  people: Person[];
+  teams: Team[];
+}) {
   const pace = fiscalYearProgress();
-  const teamColor = mockTeams.find((t) => t.id === members[0]?.person.teamId)?.color ?? '#7C3AED';
+  const teamColor = teams.find((t) => t.id === members[0]?.person.teamId)?.color ?? '#7C3AED';
 
   return (
     <Card className="mt-5">
@@ -73,6 +82,8 @@ export function MemberTable({ members, teamName }: { members: MemberStats[]; tea
                   <NudgeButton
                     personIds={[m.person.id]}
                     template={m.unclaimedCount > 0 ? 'unclaimed_gift' : 'unused_budget'}
+                    people={people}
+                    teams={teams}
                   />
                 </td>
               </tr>

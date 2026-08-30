@@ -1,7 +1,6 @@
 import { computeCompanyStats } from '../lib/derive';
-import { mockPeople } from '../mock/people';
-import { mockKudos } from '../mock/kudos';
+import type { Kudo, Person } from '../lib/types';
 
-export function useCompanyStats() {
-  return computeCompanyStats(mockPeople, mockKudos);
+export function useCompanyStats(people: Person[], kudos: Kudo[]) {
+  return computeCompanyStats(people, kudos);
 }
